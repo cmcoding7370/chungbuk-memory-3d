@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "title": "충북 동네 한바퀴",
+  "description": "충북의 관광지와 특산물 짝을 찾는 3D 보드게임",
+  "defaultCaptions": {
+    "x": "충북 동네 한바퀴에서 지역과 특산물의 짝을 찾아보세요!",
+    "facebook": "충북 동네 한바퀴에서 즐거운 짝 찾기 여행을 시작해요.",
+    "reddit": "충북 동네 한바퀴: 지역과 특산물 3D 짝 찾기",
+    "discord": "충북 동네 한바퀴에서 특산물 친구들을 만나 보세요!"
+  },
+  "assets": { "favicon": "assets/share/favicon.png", "og": "assets/share/og.png" }
+}

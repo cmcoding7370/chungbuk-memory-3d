@@ -1,6 +1,360 @@
 {
   "version": 2,
-  "groups": {},
+  "groups": {
+    "game-brand": {
+      "name": "게임 소개와 로고",
+      "order": 40
+    },
+    "local-characters": {
+      "name": "특산물 친구들",
+      "order": 30
+    },
+    "memory-cards": {
+      "name": "지역 짝찾기 카드",
+      "order": 10
+    },
+    "travel-board": {
+      "name": "충북 여행 지도",
+      "order": 20
+    }
+  },
   "bundles": {},
-  "assets": {}
+  "assets": {
+    "assets/cards/back.webp": {
+      "path": "/manus-storage/game/sha256/39726a065d3f059e0c7e9d04c9990f6c79ff08d8905cef2d3aaf4aec6f41fba0.webp",
+      "sha256": "sha256:39726a065d3f059e0c7e9d04c9990f6c79ff08d8905cef2d3aaf4aec6f41fba0",
+      "size": 111842,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p0.webp": {
+      "path": "/manus-storage/game/sha256/1580b97286c8b8f669b2d15eba218f75200973781ff19d9f81ace27f067182e3.webp",
+      "sha256": "sha256:1580b97286c8b8f669b2d15eba218f75200973781ff19d9f81ace27f067182e3",
+      "size": 43304,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p1.webp": {
+      "path": "/manus-storage/game/sha256/9029e75d02a458ffca50c9ea5611e699acfbe9670edaeef01fe3cfb4c015d04e.webp",
+      "sha256": "sha256:9029e75d02a458ffca50c9ea5611e699acfbe9670edaeef01fe3cfb4c015d04e",
+      "size": 36766,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p10.webp": {
+      "path": "/manus-storage/game/sha256/f4834ab879927177421a8c9bd064252466b5c55238655ce458c8ba26e83628b8.webp",
+      "sha256": "sha256:f4834ab879927177421a8c9bd064252466b5c55238655ce458c8ba26e83628b8",
+      "size": 40276,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p2.webp": {
+      "path": "/manus-storage/game/sha256/c6ce3f0fcc3739c84ca262525168617af9b6deaf03517c597dfac52a1072acf4.webp",
+      "sha256": "sha256:c6ce3f0fcc3739c84ca262525168617af9b6deaf03517c597dfac52a1072acf4",
+      "size": 39266,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p3.webp": {
+      "path": "/manus-storage/game/sha256/000ed9d7b5daac8029adf9e0c5a6ed2cda2eb41f06f6d32665e97332c6a3fc3e.webp",
+      "sha256": "sha256:000ed9d7b5daac8029adf9e0c5a6ed2cda2eb41f06f6d32665e97332c6a3fc3e",
+      "size": 38548,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p4.webp": {
+      "path": "/manus-storage/game/sha256/a99d0d23ef389fefa1c5657100678915bbc111a35efad4e5bb35587bc25c50c9.webp",
+      "sha256": "sha256:a99d0d23ef389fefa1c5657100678915bbc111a35efad4e5bb35587bc25c50c9",
+      "size": 36270,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p5.webp": {
+      "path": "/manus-storage/game/sha256/8d0147613ff772ac5beab14148918e3411cfc0b130a129135be1851d04d9cac6.webp",
+      "sha256": "sha256:8d0147613ff772ac5beab14148918e3411cfc0b130a129135be1851d04d9cac6",
+      "size": 44832,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p6.webp": {
+      "path": "/manus-storage/game/sha256/c4641b271470248e4cf882541fef97ec6adbea92243851f7c17bb6967422ca45.webp",
+      "sha256": "sha256:c4641b271470248e4cf882541fef97ec6adbea92243851f7c17bb6967422ca45",
+      "size": 39786,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p7.webp": {
+      "path": "/manus-storage/game/sha256/e418da760f8e1afdc510896c7cf3da3bec0b97de1a0cc586a938d457137cdeb1.webp",
+      "sha256": "sha256:e418da760f8e1afdc510896c7cf3da3bec0b97de1a0cc586a938d457137cdeb1",
+      "size": 39512,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p8.webp": {
+      "path": "/manus-storage/game/sha256/891b6e0c9675191e10be50d5640ee0111db577746eb9f96eb3fbb5bc632794b0.webp",
+      "sha256": "sha256:891b6e0c9675191e10be50d5640ee0111db577746eb9f96eb3fbb5bc632794b0",
+      "size": 40684,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/p9.webp": {
+      "path": "/manus-storage/game/sha256/ab72d8b312129605b4dd5e4cd55cfc40def349b25917d7ee5ae755fc20499489.webp",
+      "sha256": "sha256:ab72d8b312129605b4dd5e4cd55cfc40def349b25917d7ee5ae755fc20499489",
+      "size": 39226,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s0.webp": {
+      "path": "/manus-storage/game/sha256/097ab3496400222309cad50b49701d89854616c9046f983def529faa9aba64a6.webp",
+      "sha256": "sha256:097ab3496400222309cad50b49701d89854616c9046f983def529faa9aba64a6",
+      "size": 27816,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s1.webp": {
+      "path": "/manus-storage/game/sha256/aee9df54fe711265eeb04a3b1b42ad16005f0ec910f457231f608a8576b06941.webp",
+      "sha256": "sha256:aee9df54fe711265eeb04a3b1b42ad16005f0ec910f457231f608a8576b06941",
+      "size": 19110,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s10.webp": {
+      "path": "/manus-storage/game/sha256/a1303ab79b316ce5873f4b6b82c53a0b95253324354487fc748875386646b639.webp",
+      "sha256": "sha256:a1303ab79b316ce5873f4b6b82c53a0b95253324354487fc748875386646b639",
+      "size": 18978,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s2.webp": {
+      "path": "/manus-storage/game/sha256/89861f3a4464e9cbb7cbe0beebedd26f4ab8b900f91125140b10d847db0dad69.webp",
+      "sha256": "sha256:89861f3a4464e9cbb7cbe0beebedd26f4ab8b900f91125140b10d847db0dad69",
+      "size": 16254,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s3.webp": {
+      "path": "/manus-storage/game/sha256/d253841617d74ba1ef9f8319bf39c8497551126a4265111ac911872fc0967621.webp",
+      "sha256": "sha256:d253841617d74ba1ef9f8319bf39c8497551126a4265111ac911872fc0967621",
+      "size": 29462,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s4.webp": {
+      "path": "/manus-storage/game/sha256/5a99798eb83d75e57e8268f4461250f44a11470787e20950cf56860a9146848a.webp",
+      "sha256": "sha256:5a99798eb83d75e57e8268f4461250f44a11470787e20950cf56860a9146848a",
+      "size": 16976,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s5.webp": {
+      "path": "/manus-storage/game/sha256/1da1f7473e44576a965f61e119de7932bf980c8882be6edba682aa888fbc74b1.webp",
+      "sha256": "sha256:1da1f7473e44576a965f61e119de7932bf980c8882be6edba682aa888fbc74b1",
+      "size": 24492,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s6.webp": {
+      "path": "/manus-storage/game/sha256/121ccb1a66ab1dd6085d90a11441c08c1b3397b2e905b19a1c46485e37b293ad.webp",
+      "sha256": "sha256:121ccb1a66ab1dd6085d90a11441c08c1b3397b2e905b19a1c46485e37b293ad",
+      "size": 21570,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s7.webp": {
+      "path": "/manus-storage/game/sha256/3f68506a99bdc273f91776a8d5b31d2ebabf287d23603f39816adee5d041d9fb.webp",
+      "sha256": "sha256:3f68506a99bdc273f91776a8d5b31d2ebabf287d23603f39816adee5d041d9fb",
+      "size": 24736,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s8.webp": {
+      "path": "/manus-storage/game/sha256/a93ba8821681039a0a7d21db9ca8b0ddb8eee02248fd7e51879400e54d7df972.webp",
+      "sha256": "sha256:a93ba8821681039a0a7d21db9ca8b0ddb8eee02248fd7e51879400e54d7df972",
+      "size": 21088,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards/s9.webp": {
+      "path": "/manus-storage/game/sha256/ac9048849cd3435cafa6ce216d2431f5c13074f633f86849489f527159ebf693.webp",
+      "sha256": "sha256:ac9048849cd3435cafa6ce216d2431f5c13074f633f86849489f527159ebf693",
+      "size": 15770,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/chungbuk-map.webp": {
+      "path": "/manus-storage/game/sha256/c75f0b81b77ca5fb6e26e08042aedb8cdefd127bc53bfa59240712d90132905f.webp",
+      "sha256": "sha256:c75f0b81b77ca5fb6e26e08042aedb8cdefd127bc53bfa59240712d90132905f",
+      "size": 726152,
+      "assetType": "image",
+      "groupId": "travel-board"
+    },
+    "assets/mascots/0.webp": {
+      "path": "/manus-storage/game/sha256/390cddfe062c1c9f6ea5ea9f768b2f47b31acb17a7dde4fce1e9b36fe6aec6f7.webp",
+      "sha256": "sha256:390cddfe062c1c9f6ea5ea9f768b2f47b31acb17a7dde4fce1e9b36fe6aec6f7",
+      "size": 12458,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/mascots/1.webp": {
+      "path": "/manus-storage/game/sha256/454d5d937ff48d8bb1a19fad5fdebe4ed54ebe2ab67866ae1a485f3dcc12896f.webp",
+      "sha256": "sha256:454d5d937ff48d8bb1a19fad5fdebe4ed54ebe2ab67866ae1a485f3dcc12896f",
+      "size": 13278,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/mascots/10.webp": {
+      "path": "/manus-storage/game/sha256/1aa38dbb6d98263f05e212a458dd1280c5cf3698d980c3a55f1b7b242affa00c.webp",
+      "sha256": "sha256:1aa38dbb6d98263f05e212a458dd1280c5cf3698d980c3a55f1b7b242affa00c",
+      "size": 15228,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/mascots/2.webp": {
+      "path": "/manus-storage/game/sha256/0d61d8a9deac53cedad520d1d4ef43d00eda79436f97ae3259a8e32572c59137.webp",
+      "sha256": "sha256:0d61d8a9deac53cedad520d1d4ef43d00eda79436f97ae3259a8e32572c59137",
+      "size": 10740,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/mascots/3.webp": {
+      "path": "/manus-storage/game/sha256/a721bd6860d733c9ca35aac398b1539560d6b92402b4dcf2bda531a0ac6cd0e6.webp",
+      "sha256": "sha256:a721bd6860d733c9ca35aac398b1539560d6b92402b4dcf2bda531a0ac6cd0e6",
+      "size": 15796,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/mascots/4.webp": {
+      "path": "/manus-storage/game/sha256/83b0eb8471b38576c3e340d906add0c848de18d53d8dc668765cc181c5396960.webp",
+      "sha256": "sha256:83b0eb8471b38576c3e340d906add0c848de18d53d8dc668765cc181c5396960",
+      "size": 10344,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/mascots/5.webp": {
+      "path": "/manus-storage/game/sha256/a5ef563b1d36830a3cfcfafa1dc6bcaa93c40cb572d53028d45025c4fe1ae312.webp",
+      "sha256": "sha256:a5ef563b1d36830a3cfcfafa1dc6bcaa93c40cb572d53028d45025c4fe1ae312",
+      "size": 15046,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/mascots/6.webp": {
+      "path": "/manus-storage/game/sha256/6e14d98bdfecaa640e1c8426f622bd1f011c6afb960b68e1b3b241f848e6feb1.webp",
+      "sha256": "sha256:6e14d98bdfecaa640e1c8426f622bd1f011c6afb960b68e1b3b241f848e6feb1",
+      "size": 17604,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/mascots/7.webp": {
+      "path": "/manus-storage/game/sha256/3c8fdb5e0a34c647f6a69bf66cc242979edb1b4856875e4536e2ac37357951c3.webp",
+      "sha256": "sha256:3c8fdb5e0a34c647f6a69bf66cc242979edb1b4856875e4536e2ac37357951c3",
+      "size": 12836,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/mascots/8.webp": {
+      "path": "/manus-storage/game/sha256/12e684ea17957e5921c3cd532f34e1a16ceff91d5724802ab61c857062175fa9.webp",
+      "sha256": "sha256:12e684ea17957e5921c3cd532f34e1a16ceff91d5724802ab61c857062175fa9",
+      "size": 11624,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/mascots/9.webp": {
+      "path": "/manus-storage/game/sha256/ad21ee1dd0347226193ff10a25df751323350b686ad103ad5275bad756a06182.webp",
+      "sha256": "sha256:ad21ee1dd0347226193ff10a25df751323350b686ad103ad5275bad756a06182",
+      "size": 11500,
+      "assetType": "image",
+      "groupId": "local-characters"
+    },
+    "assets/models/0.glb": {
+      "path": "/manus-storage/game/sha256/d81abc0fa69595f265170c8f2945f87c7e70ccef164a9da0b28dac3d93e4c87d.glb",
+      "sha256": "sha256:d81abc0fa69595f265170c8f2945f87c7e70ccef164a9da0b28dac3d93e4c87d",
+      "size": 1464852,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/models/1.glb": {
+      "path": "/manus-storage/game/sha256/89c4efbe3f0826d007f4114904df5c5969181697daa6620083108cb3a51d69a9.glb",
+      "sha256": "sha256:89c4efbe3f0826d007f4114904df5c5969181697daa6620083108cb3a51d69a9",
+      "size": 1302540,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/models/10.glb": {
+      "path": "/manus-storage/game/sha256/acc3082ddba3d838bec8e19a5ecf6d0b349aa49d4d4abf3bfccc1b8161f71d69.glb",
+      "sha256": "sha256:acc3082ddba3d838bec8e19a5ecf6d0b349aa49d4d4abf3bfccc1b8161f71d69",
+      "size": 1350460,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/models/2.glb": {
+      "path": "/manus-storage/game/sha256/db9d79baca68b110e206ac9d9c4854c0566ce4f4f469dfda1e32bd5e827b3e98.glb",
+      "sha256": "sha256:db9d79baca68b110e206ac9d9c4854c0566ce4f4f469dfda1e32bd5e827b3e98",
+      "size": 1299236,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/models/3.glb": {
+      "path": "/manus-storage/game/sha256/e215c0b9fcf73e3f7e01613d7fb55f858d77a705d655937fa3b6cbf90d8b9660.glb",
+      "sha256": "sha256:e215c0b9fcf73e3f7e01613d7fb55f858d77a705d655937fa3b6cbf90d8b9660",
+      "size": 1453660,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/models/4.glb": {
+      "path": "/manus-storage/game/sha256/c9b1c9abb7e1a9ee7e3538b195fc7ec84cf23d9d6427b4a66a7b30668892ceb0.glb",
+      "sha256": "sha256:c9b1c9abb7e1a9ee7e3538b195fc7ec84cf23d9d6427b4a66a7b30668892ceb0",
+      "size": 1262996,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/models/5.glb": {
+      "path": "/manus-storage/game/sha256/b04bb405593e4b5e9853da5dbab68363eb2cf9cc6e6251a08d7ead9befebe925.glb",
+      "sha256": "sha256:b04bb405593e4b5e9853da5dbab68363eb2cf9cc6e6251a08d7ead9befebe925",
+      "size": 1403164,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/models/6.glb": {
+      "path": "/manus-storage/game/sha256/dcde92317bf31c49f488d26dfc5cf90ab00430b72ff19bb4acd31b8dc5841504.glb",
+      "sha256": "sha256:dcde92317bf31c49f488d26dfc5cf90ab00430b72ff19bb4acd31b8dc5841504",
+      "size": 1408852,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/models/7.glb": {
+      "path": "/manus-storage/game/sha256/ca6ef28b9ef555173de8108f3cc696438422eaa47e1887ca6c68c582920a8540.glb",
+      "sha256": "sha256:ca6ef28b9ef555173de8108f3cc696438422eaa47e1887ca6c68c582920a8540",
+      "size": 1707836,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/models/8.glb": {
+      "path": "/manus-storage/game/sha256/011a83febb1cc28bd2be4b3dbd6cf72c458bd33e715683e717f115d29c3dd583.glb",
+      "sha256": "sha256:011a83febb1cc28bd2be4b3dbd6cf72c458bd33e715683e717f115d29c3dd583",
+      "size": 1251980,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/models/9.glb": {
+      "path": "/manus-storage/game/sha256/243453e129e24013043f0ea71113bb0600ab607329bb2edf50449c856f1cf23f.glb",
+      "sha256": "sha256:243453e129e24013043f0ea71113bb0600ab607329bb2edf50449c856f1cf23f",
+      "size": 1241476,
+      "assetType": "model",
+      "groupId": "local-characters"
+    },
+    "assets/share/favicon.png": {
+      "path": "/manus-storage/game/sha256/2cadeb2e7617162bd5d8215240df21a81fb696abd979bba96ecd0c5a80ce43bf.png",
+      "sha256": "sha256:2cadeb2e7617162bd5d8215240df21a81fb696abd979bba96ecd0c5a80ce43bf",
+      "size": 21803,
+      "assetType": "image",
+      "groupId": "game-brand"
+    },
+    "assets/share/og.png": {
+      "path": "/manus-storage/game/sha256/d27a228d5034b173e5f9b0a7d5fbd62591c154f7b196e6746b72411b62f0cd06.png",
+      "sha256": "sha256:d27a228d5034b173e5f9b0a7d5fbd62591c154f7b196e6746b72411b62f0cd06",
+      "size": 5892372,
+      "assetType": "image",
+      "groupId": "game-brand"
+    }
+  }
 }
