@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "smoke": "node scripts/smoke.mjs",
+    "dev:server": "pnpm --dir server start",
+    "test:server": "pnpm --dir server test",
+    "smoke:online": "node scripts/online-smoke.mjs",
     "manus:build-source": "tsc --noEmit && vite build && node scripts/check-size.mjs"
   },
   "dependencies": {

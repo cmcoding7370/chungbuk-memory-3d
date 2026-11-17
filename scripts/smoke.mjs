@@ -67,11 +67,21 @@ try {
   await click3DCard(page, 'p0')
   ensure(await page.locator('[data-field="preview-cards"] img').count() === 1, 'the first revealed card was not enlarged')
   ensure(await page.locator('[data-action="next"]').isDisabled(), 'turn can advance after only one card')
+  // Capture the actual resolving frame even if a busy browser is slow to answer the next test command.
+  await page.evaluate(() => {
+    window.__resolutionCapture = null
+    const preview = document.querySelector('[data-field="preview-cards"]')
+    const observer = new MutationObserver(() => {
+      const game = window.__memory.getState()
+      if (game.phase !== 'resolving') return
+      window.__resolutionCapture = { game: structuredClone(game), previewCount: preview.querySelectorAll('img').length }
+      observer.disconnect()
+    })
+    observer.observe(preview, { childList: true, subtree: true })
+  })
   await click3DCard(page, 's1')
-  const resolving = await page.evaluate(() => ({
-    game: window.__memory.getState(),
-    previewCount: document.querySelectorAll('[data-field="preview-cards"] img').length,
-  }))
+  const resolving = await page.evaluate(() => window.__resolutionCapture)
+  ensure(resolving, 'the resolving frame was not captured')
   let current = resolving.game
   ensure(current.phase === 'resolving' && current.cards.find(c => c.id === 'p0').revealed && current.cards.find(c => c.id === 's1').revealed, 'two cards were not shown while resolving')
   ensure(resolving.previewCount === 2, `both revealed cards were not enlarged: ${resolving.previewCount}`)

@@ -1,95 +1,53 @@
-# game-3d starter (three.js + Rapier)
+# 충북 동네 한바퀴
 
-A complete, small 3D game — **Sky Cores**: run, jump and dash across floating islands to collect
-every energy core before the clock runs out, avoiding patrol drones. It exists to be *changed*:
-the engine layer is fixed scaffolding, the game layer is the part you rewrite.
+충북의 관광지와 특산물을 짝짓는 한국어 3D 보드게임입니다. 제공된 지도, 카드와 11개 캐릭터 모델을 사용합니다. 같은 기기에서 2~6명이 차례대로 플레이하거나, 별도 게임 서버에 접속해 각자의 기기에서 한 방을 공유할 수 있습니다.
+
+## 게임 방법
+
+1. 한 차례에 카드 두 장을 공개합니다.
+2. 같은 지역의 관광지와 특산물이면 현재 참가자가 캐릭터를 획득하며 카드가 공개 상태로 남습니다. 다르면 잠시 보여 준 후 다시 뒤집힙니다.
+3. 다음 차례 버튼으로 진행합니다. 11쌍을 모두 찾았을 때 가장 많은 캐릭터를 모은 참가자가 승리하며, 동점이면 공동 우승입니다.
+
+온라인 방은 두 번째 참가자가 입장하면 자동으로 시작합니다. 진행 중에도 최대 6명까지 입장할 수 있습니다. 방 코드는 초대에 사용되며, 재접속용 비밀 토큰은 링크가 아닌 각 탭의 저장소에 보관됩니다.
+
+## 현재 배포 상태
+
+온라인 게임 서버 코드는 `server/`에 포함되어 있지만, **공개 서버는 아직 설정되거나 배포되지 않았습니다**. `public/multiplayer/bootstrap.json`의 주소가 비어 있을 때 온라인 모드는 연결할 수 없음을 안내합니다. 깃허브에 소스 코드를 올리는 것만으로 게임 서버가 실행되지는 않습니다.
+
+## 개발 환경에서 실행
+
+Node.js 22 이상과 pnpm이 필요합니다. 클라이언트와 서버는 각각 잠금 파일을 사용합니다.
 
 ```bash
-pnpm install
-pnpm dev      # http://localhost:5173
-pnpm build    # typecheck + production build + JS/font budgets + total-size report
-pnpm test     # unit tests (rules, save, i18n, level)
-pnpm smoke    # after build: headless browser playthrough + screenshots in shots/
+pnpm install --frozen-lockfile
+pnpm --dir server install --frozen-lockfile
+
+# 첫 번째 터미널: WebSocket 게임 서버
+ALLOWED_ORIGINS=http://127.0.0.1:3000 HOST=127.0.0.1 PORT=8787 pnpm dev:server
+
+# 두 번째 터미널: 같은 컴퓨터에서 확인할 게임 화면
+GAME_MULTIPLAYER_SIGNALING_URL=ws://127.0.0.1:8787/ws HOST=127.0.0.1 PORT=3000 pnpm dev
 ```
 
-## Layout
+브라우저에서 `http://127.0.0.1:3000/`을 열고 온라인 방을 만든 뒤, 다른 브라우저 창에서 같은 방 코드로 참가합니다. 위 `ws://127.0.0.1` 설정은 로컬 개발 전용입니다. 다른 기기나 HTTPS로 제공되는 게임에는 접근 가능한 `wss://` 서버가 필요합니다.
 
-| Path | Role | Change it? |
-| --- | --- | --- |
-| `src/engine/loop.ts` | Fixed 60 Hz simulation + interpolated rendering | Rarely |
-| `src/engine/input.ts` | Keyboard/mouse, gamepad, touch → one action state | Add actions here |
-| `src/engine/physics.ts` | Rapier world, collider helpers, render interpolation | Rarely |
-| `src/engine/renderer.ts` | WebGL renderer, quality presets, bloom | Rarely |
-| `src/engine/audio.ts` | Music/SFX buses, synthesized SFX, `load()` for files | Add sounds |
-| `src/engine/save.ts` | Versioned localStorage save + leaderboard | Add fields + parsing |
-| `src/engine/i18n.ts` | en / zh-CN, browser detection, saved choice wins | Rarely |
-| `src/engine/assets.ts` | Cached GLTF/texture loading with progress | Use it for models |
-| `src/game/config.ts` | Source defaults and active gameplay configuration | Yes |
-| `src/game/tuning.ts` | Tweak catalog, atomic validation and activation boundaries | Yes |
-| `src/game/rules.ts` | Pure score/lives/clock/win rules (unit tested) | Yes |
-| `src/game/world.ts` | Level layout, sky, lights, islands, stones, lifts | Yes |
-| `src/game/player.ts` | Character controller + game feel + procedural model | Yes |
-| `src/game/*.ts` | Camera, cores, drones, particles, scene orchestration | Yes |
-| `src/ui/`, `src/styles/main.css` | HTML/CSS title, HUD, pause, settings, results | Yes |
-| `src/i18n/*.json` | All player-facing text (both files, same keys) | Yes |
+```bash
+pnpm test                         # 게임 및 클라이언트 테스트
+pnpm test:server                  # 게임 서버 테스트
+pnpm build                        # 클라이언트 빌드
+pnpm smoke                        # 기존 3D 게임 조작 검사
+pnpm smoke:online                 # 독립된 두 브라우저로 온라인 조작 검사
+SMOKE_LATENCY_MS=150 pnpm smoke:online  # 왕복 150ms 지연 조건 검사
+```
 
-## Rules for changes
+공개 서버의 환경 변수, 방과 접속의 수명, TLS 및 운영 지침은 [`server/README.md`](server/README.md)를 참고하세요. HTTPS 사이트에서는 실제 공개 `wss://.../ws` 주소와 정확한 클라이언트 origin 허용 목록을 설정한 후 별도로 배포하고 검증해야 합니다.
 
-- **Simulation in `step()`, visuals in `render()`/`animate()`.** Gameplay state only changes in
-  fixed steps; read presses there with `input.consume(action)`, never `pressed()`.
-- **Rules stay pure.** Scoring, win/lose and progression go in `rules.ts` with tests; scene code
-  reports events and reads state.
-- **Every visible string is an i18n key** in both `en.json` and `zh-CN.json` (a test enforces
-  matching keys and placeholders). English and Chinese use the bundled Manus CC0 fonts in `public/fonts/`;
-  if you add new Chinese text, check it renders (missing glyphs fall back to system fonts).
-- **UI is HTML/CSS**, not canvas. Keep the game look: display font, outlined text, hard offset
-  shadows, skewed buttons, notched panels. Menus must stay keyboard/gamepad navigable
-  (`data-nav` on focusable controls).
-- **Colliders come from the helpers** in `physics.ts` with the same sizes as the meshes.
-- Keep `npm run build` within the JS/font budgets (`scripts/check-size.mjs`) and `npm run smoke` green.
-  Total game asset size is reported without a hard limit.
+## 이미지와 3D 자산
 
-## Controls
+지도, 카드와 3D 모델은 이 프로젝트의 Manus 관리 자산 저장소에서 복원되며, Git 저장소에는 자산 목록과 복원 스크립트가 포함됩니다. 이 때문에 다른 환경에서 Git 저장소만 복제하면 자산에 접근할 권한이나 복원 환경이 없을 수 있습니다. 비밀 키를 깃허브나 클라이언트 코드에 추가하지 마세요.
 
-Keyboard/mouse: WASD move, mouse look (click to capture), Space jump (hold = higher), Shift
-sprint, F or left click dash, Esc pause. Gamepad: left stick, right stick, A jump, X/RB dash,
-LB sprint, Start pause. Touch: left-side stick, right-side drag to look, JUMP / DASH buttons.
+## 운영상 한계
 
-## Credits
+방과 카드 상태, 점수는 서버 메모리에 보관하므로 서버가 재시작하면 사라집니다. 연결이 끊긴 참가자는 60초 이내에 같은 탭에서 기존 자리로 복구할 수 있습니다. 유예가 끝나면 해당 참가자의 점수는 현재 게임 결과에서 제외될 수 있습니다. 방 코드는 초대 수단이며 회원 인증이나 비공개 보안을 제공하지 않습니다.
 
-Fonts: ManusCC0 (regular, medium, bold) and ManusCC0 Sans CJK SC — CC0 1.0.
-The bundled Chinese font preserves its 6,547-codepoint repertoire; no font download is required.
-See `public/fonts/ManusCC0-LICENSE.txt`.
-Libraries: three.js (MIT), Rapier (Apache-2.0).
-
-## Preview Tweak
-
-`src/game/tuning.ts` is this game's parameter manager. The Addon panel reads its
-catalog; `config.ts` owns source defaults and the active configuration used by gameplay.
-When adapting the game, keep only controls with actual gameplay consumers, and preserve
-stable IDs for unchanged parameters. Define ranges, units and the correct activation
-boundary. Register through `scripts/manus-tuning/adapter.js` only under `import.meta.env.DEV`.
-Keep the Vite plugin and `scripts/__manus__/` helpers intact; production builds exclude
-the browser adapter and never inject the bridge.
-
-Apply changes preview state only. `LIVE` parameters are read in the next game update;
-`NEXT_ACTION` parameters activate at the relevant jump/dash start; `NEXT_RUN` parameters
-activate in `Game.start`. Model/collider size and gravity are not exposed by this version.
-Do not mutate the source defaults or persist Apply to localStorage. Save with Manus
-checks the snapshot against the current catalog and edits `DEFAULT_CONFIG`, then uses
-the normal Three.js Web build/checkpoint workflow. Keep existing gameplay parameter
-managers when extending an older project; do not create a competing store.
-
-For server-authoritative multiplayer, expose local cosmetic controls only until gameplay
-parameters have explicit server-side development support. The descriptor's GAMEPLAY flag
-is a classification, not server authorization or ranked-score enforcement.
-
-The preview plugin reads the ignored `.manus-webdev/preview-identity.json` v1 projection
-written by the Runtime when initializing, attaching or restoring this project. It contains
-only the resource ID and canonical project directory; private Host bindings and starter
-receipts are not template dependencies. Missing identity disables the bridge.
-The manager latches `tuning.unranked` when non-default GAMEPLAY values become active and
-resets it only at the next run using that run's active values. `Game` snapshots this onto
-`RunState.unranked`; local results cannot save such runs. Preserve this guard when changing
-scoring. When adding online leaderboards, skip submissions for unranked runs and enforce
-eligibility in the authoritative server too; client flags are not proof of a fair score.
+게임 클라이언트는 Three.js를, 서버는 `ws`를 사용합니다. 각 라이브러리의 라이선스는 해당 패키지에 포함되어 있습니다.

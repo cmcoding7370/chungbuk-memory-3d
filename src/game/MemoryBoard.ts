@@ -16,6 +16,7 @@ type CardObject = {
   root: THREE.Group
   pivot: THREE.Group
   hit: THREE.Mesh
+  face: THREE.Mesh<THREE.ShapeGeometry, THREE.MeshBasicMaterial>
   highlight: THREE.Mesh
   targetAngle: number
 }
@@ -118,7 +119,7 @@ function defaultFitDistance(aspect: number, fov: number): number {
 
 /**
  * A self-contained, perspective 3D board. Asset paths are absolute so they work from any route.
- * Cards use p0..p10 / s0..s10 IDs when supplied; other IDs use kind and regionId instead.
+ * Card IDs identify slots; artwork is determined by the current revealed identity.
  */
 export class MemoryBoard {
   private readonly scene = new THREE.Scene()
@@ -231,7 +232,7 @@ export class MemoryBoard {
   }
 
   /**
-   * Input order determines the shuffled slot order. Claimed regions stay face-up; selected IDs
+   * Input order determines the shuffled slot order. Revealed cards stay face-up; selected IDs
    * receive a gold outline. Calling this repeatedly does not recreate unchanged card objects.
    */
   setCards(cards: VisualCard[], claimed: number[], selectedIds: string[]): void {
@@ -239,7 +240,8 @@ export class MemoryBoard {
     this.needsRender = true
     const claimedSet = new Set(claimed)
     const selectedSet = new Set(selectedIds)
-    const ids = new Set(cards.map((card) => card.id))
+    const displayedCards = cards.slice(0, 22)
+    const ids = new Set(displayedCards.map((card) => card.id))
     for (const [id, object] of this.cards) {
       if (!ids.has(id)) {
         this.scene.remove(object.root)
@@ -247,29 +249,33 @@ export class MemoryBoard {
       }
     }
 
-    const regionIds = [...new Set(cards.map((card) => card.regionId))].sort((a, b) => a - b)
+    // Hidden multiplayer cards use -1, which must not shift the marker mapping.
+    const regionIds = [...new Set(cards.map((card) => card.regionId).filter((id) => id >= 0))].sort((a, b) => a - b)
     const oneBased = regionIds.length === 11 && regionIds[0] === 1 && regionIds[10] === 11
-    cards.slice(0, 22).forEach((card, index) => {
+    displayedCards.forEach((card, index) => {
       let object = this.cards.get(card.id)
       if (!object) {
-        object = this.createCard(card, oneBased)
+        object = this.createCard(card)
         this.cards.set(card.id, object)
         this.scene.add(object.root)
-        object.pivot.rotation.y = card.revealed || claimedSet.has(card.regionId) ? Math.PI : 0
+        object.pivot.rotation.y = card.revealed ? Math.PI : 0
       }
+      // Never derive or request a face for a hidden card, even when its local ID encodes one.
+      // Replacing the material immediately also removes any former identity from this slot.
+      object.face.material = card.revealed ? this.getFaceMaterial(card, oneBased) : this.backMaterial
       // Eleven cards on each side, arranged in two columns, in supplied shuffle order.
       const side = index < 11 ? -1 : 1
       const slot = index % 11
       const column = slot % 2
       const row = Math.floor(slot / 2)
       object.root.position.set(side * (4.75 + column * 1.36), RESTING_CARD_Y, -5 + row * 2)
-      object.targetAngle = card.revealed || claimedSet.has(card.regionId) ? Math.PI : 0
+      object.targetAngle = card.revealed ? Math.PI : 0
       object.highlight.visible = selectedSet.has(card.id)
     })
 
     // Stable, named marker sockets can later be replaced with the project's actual 3D models.
     this.markers.forEach((marker, index) => {
-      const regionId = regionIds.length === 11 ? regionIds[index] : index
+      const regionId = oneBased ? index + 1 : index
       marker.root.name = `region-marker-${regionId}`
       marker.root.userData.regionId = regionId
       const isClaimed = claimedSet.has(regionId)
@@ -369,8 +375,10 @@ export class MemoryBoard {
         loaded.dispose()
         return
       }
+      const previous = material.map
       material.map = loaded
       material.needsUpdate = true
+      if (previous && previous !== loaded && this.textures.delete(previous)) this.disposeTextures(new Set([previous]))
       onLoad?.(loaded)
       this.needsRender = true
     }, undefined, () => {
@@ -686,7 +694,7 @@ export class MemoryBoard {
     bitmaps.forEach((bitmap) => bitmap.close())
   }
 
-  private createCard(card: VisualCard, oneBased: boolean): CardObject {
+  private createCard(card: VisualCard): CardObject {
     const root = new THREE.Group()
     root.name = `card-${card.id}`
     root.rotation.x = -Math.PI / 2
@@ -702,7 +710,8 @@ export class MemoryBoard {
     back.position.z = CARD_DEPTH / 2 + 0.03
     pivot.add(back)
 
-    const face = new THREE.Mesh(this.faceGeometry, this.getFaceMaterial(card, oneBased))
+    // Start with only the shared back material; the identity may not yet be known.
+    const face = new THREE.Mesh(this.faceGeometry, this.backMaterial)
     face.rotation.y = Math.PI
     face.position.z = -(CARD_DEPTH / 2 + 0.03)
     pivot.add(face)
@@ -710,19 +719,19 @@ export class MemoryBoard {
     highlight.position.z = -0.10
     highlight.visible = false
     root.add(highlight)
-    return { root, pivot, hit: body, highlight, targetAngle: 0 }
+    return { root, pivot, hit: body, face, highlight, targetAngle: 0 }
   }
 
   private getFaceMaterial(card: VisualCard, oneBased: boolean): THREE.MeshBasicMaterial {
-    const explicit = /^(p|s)(10|[0-9])$/i.exec(card.id)
-    const prefix = explicit ? explicit[1].toLowerCase() : card.kind === 'place' ? 'p' : 's'
-    const index = explicit ? Number(explicit[2]) : card.regionId - (oneBased ? 1 : 0)
+    const prefix = card.kind === 'place' ? 'p' : 's'
+    const index = card.regionId - (oneBased ? 1 : 0)
+    if (!Number.isInteger(index) || index < 0 || index > 10) return this.backMaterial
     const key = `${prefix}${index}`
     const existing = this.faceMaterials.get(key)
     if (existing) return existing
     const material = this.keepMaterial(new THREE.MeshBasicMaterial({ map: this.makeFaceFallback(card), toneMapped: false }))
     this.faceMaterials.set(key, material)
-    if (Number.isInteger(index) && index >= 0 && index <= 10) this.loadIntoMaterial(getTextureUrl(`assets/cards-hd/${key}.webp`), material)
+    this.loadIntoMaterial(getTextureUrl(`assets/cards-hd/${key}.webp`), material)
     return material
   }
 

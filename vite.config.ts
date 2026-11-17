@@ -1,5 +1,5 @@
 import { manusGameTuning } from './scripts/manus-tuning/vite.mjs'
-import { loadEnv } from 'vite'
+import { loadEnv, type Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
 import { createReadStream, existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -30,14 +30,33 @@ function localManagedModels() {
   }
 }
 
+// Local development override only; the deployed bootstrap never inherits a loopback address.
+function multiplayerBootstrap(signalingUrl: string | undefined): Plugin {
+  return {
+    name: 'multiplayer-bootstrap',
+    apply: 'serve',
+    configureServer(server) {
+      if (!signalingUrl) return
+      const allowed = /^wss:\/\/[^/@?#:]+(?::[0-9]+)?\/ws$|^ws:\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::[0-9]+)?\/ws$/
+      if (!allowed.test(signalingUrl)) throw new Error('Invalid GAME_MULTIPLAYER_SIGNALING_URL')
+      const body = JSON.stringify({ build: 'chungbuk-memory-v1', signalingUrl, iceTransportPolicy: 'all' })
+      server.middlewares.use('/multiplayer/bootstrap.json', (_req, res) => {
+        res.setHeader('Content-Type', 'application/json')
+        res.setHeader('Cache-Control', 'no-store')
+        res.end(body)
+      })
+    },
+  }
+}
+
 // Relative base keeps production output portable; the Session owns preview HOST/PORT.
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', ['HOST', 'PORT'])
+  const env = loadEnv(mode, '.', ['HOST', 'PORT', 'GAME_MULTIPLAYER_'])
   const port = Number(env.PORT ?? 3000)
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT')
   return {
     base: './',
-    plugins: [manusGameTuning(), localManagedModels()],
+    plugins: [manusGameTuning(), localManagedModels(), multiplayerBootstrap(env.GAME_MULTIPLAYER_SIGNALING_URL)],
     server: {
       host: env.HOST ?? '127.0.0.1', port, strictPort: true,
       allowedHosts: ['.manuspre.computer', '.manus.computer', '.manus-asia.computer', '.manuscomputer.ai', '.manusvm.computer', 'localhost', '127.0.0.1'],
