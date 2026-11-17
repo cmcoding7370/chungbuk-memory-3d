@@ -1,4 +1,4 @@
-// End-to-end smoke test for the 3D memory game. Run after `pnpm build`.
+// Interaction smoke test against the source development server. Run `pnpm build` separately.
 import { spawn } from 'node:child_process'
 import { mkdirSync } from 'node:fs'
 import { chromium } from 'playwright'
@@ -7,18 +7,21 @@ const port = 4300 + Math.floor(Math.random() * 500)
 const url = `http://127.0.0.1:${port}/`
 const out = process.env.SHOTS_DIR ?? 'shots'
 mkdirSync(out, { recursive: true })
-const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--port', String(port), '--strictPort', '--host', '127.0.0.1'], { stdio: 'ignore' })
+const server = spawn('pnpm', ['dev'], { stdio: 'ignore', detached: true, env: { ...process.env, HOST: '127.0.0.1', PORT: String(port) } })
+function stopServer() {
+  if (!server.pid) return
+  try { process.kill(-server.pid, 'SIGTERM') } catch { server.kill('SIGTERM') }
+}
 let browser
-const timeout = setTimeout(() => { console.error('smoke: timed out'); server.kill(); process.exit(1) }, 120_000)
+const timeout = setTimeout(() => { console.error('smoke: timed out'); stopServer(); process.exit(1) }, 120_000)
 
 async function waitForServer() {
   for (let i = 0; i < 80; i += 1) {
     try { if ((await fetch(url)).ok) return } catch {}
     await new Promise(resolve => setTimeout(resolve, 250))
   }
-  throw new Error('preview server did not start')
+  throw new Error('dev server did not start')
 }
-
 async function startPage(viewport, errors) {
   const context = await browser.newContext({ viewport, locale: 'ko-KR' })
   const page = await context.newPage()
@@ -30,28 +33,23 @@ async function startPage(viewport, errors) {
   await page.locator('[data-form="setup"] button[type="submit"]').click()
   await page.waitForSelector('[data-modal="setup"]', { state: 'hidden' })
   await page.waitForSelector('[data-field="board"] canvas')
-  await page.waitForTimeout(1200)
+  await page.waitForFunction(() => Boolean(window.__memory))
+  await page.waitForTimeout(900)
   return { context, page }
 }
-
-// Search for a real rendered card by sending pointer events across the board.
-// A message change identifies a successful 3D hit.
-async function revealOneCard(page) {
-  const canvas = page.locator('[data-field="board"] canvas')
-  const rect = await canvas.boundingBox()
-  if (!rect) throw new Error('board canvas is not visible')
-  const before = await page.locator('[data-field="message"]').textContent()
-  for (let fy = 0.12; fy <= 0.88; fy += 0.085) {
-    for (let fx = 0.08; fx <= 0.92; fx += 0.06) {
-      const x = rect.x + rect.width * fx
-      const y = rect.y + rect.height * fy
-      await page.mouse.click(x, y)
-      const message = await page.locator('[data-field="message"]').textContent()
-      if (message !== before && message?.includes('공개되었습니다')) return { x, y }
-    }
-  }
-  throw new Error('no clickable 3D card found in the board canvas')
+async function state(page) { return page.evaluate(() => window.__memory.getState()) }
+async function click3DCard(page, id) {
+  const point = await page.evaluate(cardId => window.__memory.cardScreenPoint(cardId), id)
+  if (!point) throw new Error(`3D card ${id} not found`)
+  await page.mouse.click(point.x, point.y)
+  const current = await state(page)
+  if (!current.selectedIds.includes(id)) throw new Error(`3D card ${id} could not be clicked`)
 }
+async function waitForResolution(page) {
+  await page.waitForFunction(() => window.__memory.getState().phase === 'turnEnd', null, { timeout: 8000 })
+  await page.waitForTimeout(600)
+}
+function ensure(condition, message) { if (!condition) throw new Error(message) }
 
 try {
   await waitForServer()
@@ -59,36 +57,58 @@ try {
     .catch(() => chromium.launch({ executablePath: '/usr/bin/chromium', args: ['--ignore-gpu-blocklist', '--enable-webgl'] }))
   const errors = []
   const desktop = await startPage({ width: 1440, height: 900 }, errors)
-  await desktop.page.screenshot({ path: `${out}/01-board.png`, fullPage: true })
-  await desktop.page.locator('[data-action="zoom-in"]').click()
-  await desktop.page.locator('[data-action="zoom-reset"]').click()
-  await desktop.page.waitForTimeout(300)
-  const first = await revealOneCard(desktop.page)
-  if (!(await desktop.page.locator('[data-action="next"]').isDisabled())) throw new Error('next turn was enabled before the second card')
-  const second = await revealOneCard(desktop.page)
-  if (await desktop.page.locator('[data-action="next"]').isDisabled()) throw new Error('next turn was not enabled after two cards')
-  await desktop.page.waitForTimeout(700)
-  await desktop.page.locator('[data-action="next"]').click()
-  if (!(await desktop.page.locator('[data-field="turn-name"]').textContent())?.includes('플레이어 2')) throw new Error('turn did not advance')
-  if (await desktop.page.locator('[data-player="0"]').isDisabled()) throw new Error('players cannot claim revealed pairs before the next reveal')
-  await desktop.page.locator('[data-player="0"]').click()
-  if (!(await desktop.page.locator('[data-player="1"]').isDisabled())) throw new Error('other players can replace an active claimant')
-  await desktop.page.mouse.click(first.x, first.y)
-  await desktop.page.mouse.click(second.x, second.y)
-  const result = await desktop.page.locator('[data-field="message"]').textContent()
-  if (!/(짝을 획득|지역이 일치하지|관광지 카드와 특산물 카드)/.test(result ?? '')) throw new Error(`pair selection did not resolve: ${result}`)
-  await desktop.page.screenshot({ path: `${out}/02-play.png`, fullPage: true })
+  const page = desktop.page
+  await page.screenshot({ path: `${out}/01-board.png`, fullPage: true })
+  await page.locator('[data-action="zoom-in"]').click()
+  await page.locator('[data-action="zoom-reset"]').click()
+  await page.waitForTimeout(300)
+
+  // A mismatched pair remains visible while resolving, then both 3D cards close again.
+  await click3DCard(page, 'p0')
+  ensure(await page.locator('[data-action="next"]').isDisabled(), 'turn can advance after only one card')
+  await click3DCard(page, 's1')
+  let current = await state(page)
+  ensure(current.phase === 'resolving' && current.cards.find(c => c.id === 'p0').revealed && current.cards.find(c => c.id === 's1').revealed, 'two cards were not shown while resolving')
+  await waitForResolution(page)
+  current = await state(page)
+  ensure(!current.cards.find(c => c.id === 'p0').revealed && !current.cards.find(c => c.id === 's1').revealed, 'mismatched cards did not flip back')
+  ensure(current.players.every(p => p.score === 0), 'a mismatch incorrectly awarded a character')
+  await page.locator('[data-action="next"]').click()
+  await page.waitForTimeout(650)
+
+  // A matching pair remains open and the current player gets the exact character.
+  await click3DCard(page, 'p0')
+  await click3DCard(page, 's0')
+  await waitForResolution(page)
+  current = await state(page)
+  ensure(current.claimed.includes(0) && current.players[1].score === 1 && current.players[1].collected.includes(0), 'matching pair did not award the correct player and character')
+  ensure(current.cards.find(c => c.id === 'p0').revealed && current.cards.find(c => c.id === 's0').revealed, 'matching cards did not remain open')
+  await page.waitForSelector('[data-field="players"] img', { timeout: 5000 })
+  await page.screenshot({ path: `${out}/02-play.png`, fullPage: true })
+
+  // Restarting during the delay must cancel the old result.
+  await page.locator('[data-action="next"]').click()
+  await page.waitForTimeout(300)
+  await click3DCard(page, 'p1')
+  await click3DCard(page, 's1')
+  await page.locator('[data-action="restart"]').first().click()
+  await page.waitForTimeout(1700)
+  current = await state(page)
+  ensure(current.phase === 'flip' && current.players.every(p => p.score === 0) && current.claimed.length === 0, 'old resolution changed the restarted game')
   await desktop.context.close()
+
   const mobile = await startPage({ width: 390, height: 844 }, errors)
+  await mobile.page.locator('[data-action="zoom-in"]').click()
+  await mobile.page.locator('[data-action="zoom-reset"]').click()
   await mobile.page.screenshot({ path: `${out}/03-mobile.png`, fullPage: true })
   await mobile.context.close()
   if (errors.length) throw new Error(`browser errors:\n${errors.join('\n')}`)
-  console.log(`smoke: OK — 3D card clicks, turn progression, pair attempt and mobile view; screenshots in ${out}/`)
+  console.log('smoke: OK — real 3D clicks, mismatch flip-back, matching character, restart timer, mobile controls')
 } catch (error) {
   console.error(`smoke: FAIL — ${error?.message ?? String(error)}`)
   process.exitCode = 1
 } finally {
   clearTimeout(timeout)
   await browser?.close().catch(() => {})
-  server.kill('SIGTERM')
+  stopServer()
 }

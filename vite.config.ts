@@ -6,17 +6,17 @@ import { resolve } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 // Deployed pages use managed storage. For local tests, resolve the same
-// immutable model URLs to the already-restored project files.
+// immutable model and character-image URLs to restored project files.
 function localManagedModels() {
   const serve = (req: IncomingMessage, res: ServerResponse, next: () => void) => {
     const url = (req.url ?? '').split('?')[0]
-    if (!url.startsWith('/manus-storage/game/sha256/') || !url.endsWith('.glb')) return next()
+    if (!url.startsWith('/manus-storage/game/sha256/') || !/\.(glb|webp)$/.test(url)) return next()
     try {
       const lock = JSON.parse(readFileSync(resolve('assets.lock.json'), 'utf8')) as { assets: Record<string, { path: string }> }
-      const found = Object.entries(lock.assets).find(([key, value]) => key.startsWith('assets/models/') && value.path === url)
+      const found = Object.entries(lock.assets).find(([key, value]) => (key.startsWith('assets/models/') || key.startsWith('assets/mascots/')) && value.path === url)
       const file = found && resolve(found[0])
       if (!file || !existsSync(file)) return next()
-      res.setHeader('Content-Type', 'model/gltf-binary')
+      res.setHeader('Content-Type', url.endsWith('.glb') ? 'model/gltf-binary' : 'image/webp')
       createReadStream(file).pipe(res)
     } catch { next() }
   }

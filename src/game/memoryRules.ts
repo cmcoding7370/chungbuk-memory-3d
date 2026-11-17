@@ -16,6 +16,8 @@ export type Player = {
   id: number
   name: string
   score: number
+  /** 획득한 지역 캐릭터의 지역 ID. */
+  collected: number[]
 }
 
 export type GameState = {
@@ -23,9 +25,9 @@ export type GameState = {
   players: Player[]
   /** Zero-based index into players, not an independent player ID. */
   turn: number
-  phase: 'flip' | 'claim' | 'finished'
-  /** Number of cards revealed by the active player this turn, at most two. */
-  flipsThisTurn: number
+  phase: 'flip' | 'resolving' | 'turnEnd' | 'finished'
+  /** IDs revealed during the current turn, until the pair is resolved. */
+  selectedIds: string[]
   /** IDs of regions whose pairs have already been claimed. */
   claimed: number[]
   lastMessage: string
@@ -68,85 +70,105 @@ export function createGame(names: string[], random: () => number = Math.random):
 
   return {
     cards,
-    players: names.map((name, id) => ({ id, name, score: 0 })),
+    players: names.map((name, id) => ({ id, name, score: 0, collected: [] })),
     turn: 0,
     phase: 'flip',
-    flipsThisTurn: 0,
+    selectedIds: [],
     claimed: [],
     lastMessage: '첫 번째 참가자가 카드 두 장을 차례로 공개하세요.',
   }
 }
 
-/** Reveal up to two hidden cards each turn, keeping every revealed card face-up. */
+/** Reveal one hidden card immediately; resolving the pair is a separate action. */
 export function revealCard(state: GameState, cardId: string): GameState {
   if (state.phase === 'finished') return { ...state, lastMessage: '이미 게임이 끝났습니다.' }
-  if (state.phase !== 'flip') return { ...state, lastMessage: '이번 차례에 카드 두 장을 공개했습니다. 다음 차례로 넘겨 주세요.' }
+  if (state.phase === 'resolving') return { ...state, lastMessage: '두 카드의 짝을 확인하고 있습니다. 잠시 기다려 주세요.' }
+  if (state.phase !== 'flip') return { ...state, lastMessage: '다음 차례 버튼을 눌러 주세요.' }
+  if (state.selectedIds.length >= 2) return { ...state, lastMessage: '한 차례에 두 장만 공개할 수 있습니다.' }
 
   const card = state.cards.find((candidate) => candidate.id === cardId)
   if (!card) return { ...state, lastMessage: '존재하지 않는 카드입니다.' }
-  if (card.revealed) return { ...state, lastMessage: '이미 공개된 카드입니다.' }
+  if (card.revealed || state.selectedIds.includes(cardId)) return { ...state, lastMessage: '이미 공개된 카드입니다.' }
+  if (state.claimed.includes(card.regionId)) return { ...state, lastMessage: '이미 획득한 지역의 카드입니다.' }
 
-  const cards = state.cards.map((candidate) => candidate.id === cardId ? { ...candidate, revealed: true } : candidate)
-  const flipsThisTurn = state.flipsThisTurn + 1
-  const done = flipsThisTurn >= 2 || cards.every(candidate => candidate.revealed)
+  const selectedIds = [...state.selectedIds, cardId]
   return {
     ...state,
-    cards,
-    flipsThisTurn,
-    phase: done ? 'claim' : 'flip',
-    lastMessage: done
-      ? '카드가 공개되었습니다. 짝을 찾거나 다음 차례로 넘기세요.'
-      : '카드가 공개되었습니다. 카드 한 장을 더 공개해 주세요.',
+    cards: state.cards.map((candidate) => candidate.id === cardId ? { ...candidate, revealed: true } : candidate),
+    selectedIds,
+    phase: selectedIds.length === 2 ? 'resolving' : 'flip',
+    lastMessage: selectedIds.length === 2
+      ? '두 카드의 짝을 확인하고 있습니다. 잠시 기다려 주세요.'
+      : '카드 한 장을 더 공개해 주세요.',
   }
 }
 
-/** Either card order is accepted; the selected scorer need not be the current player. */
-export function claimPair(state: GameState, playerId: number, cardId1: string, cardId2: string): GameState {
+/** Resolve the two visible cards; call after players have had time to see them. */
+export function resolvePair(state: GameState): GameState {
   if (state.phase === 'finished') return { ...state, lastMessage: '이미 게임이 끝났습니다.' }
+  if (state.phase !== 'resolving' || state.selectedIds.length !== 2) {
+    return { ...state, lastMessage: '카드 두 장을 공개한 후 짝을 확인할 수 있습니다.' }
+  }
 
-  const player = state.players.find((candidate) => candidate.id === playerId)
-  if (!player) return { ...state, lastMessage: '존재하지 않는 참가자입니다.' }
-  if (cardId1 === cardId2) return { ...state, lastMessage: '서로 다른 카드 두 장을 선택하세요.' }
+  const [firstId, secondId] = state.selectedIds
+  const first = state.cards.find((card) => card.id === firstId)
+  const second = state.cards.find((card) => card.id === secondId)
+  if (firstId === secondId || !first || !second || !first.revealed || !second.revealed) {
+    return { ...state, lastMessage: '서로 다른 공개된 카드 두 장을 선택해 주세요.' }
+  }
+  // A claimed character can never be awarded again or have its cards hidden.
+  if (state.claimed.includes(first.regionId) || state.claimed.includes(second.regionId)) {
+    return { ...state, lastMessage: '이미 획득한 지역의 카드는 다시 선택할 수 없습니다.' }
+  }
+  const player = state.players[state.turn]
+  if (!player) return { ...state, lastMessage: '현재 참가자를 확인할 수 없습니다.' }
 
-  const first = state.cards.find((candidate) => candidate.id === cardId1)
-  const second = state.cards.find((candidate) => candidate.id === cardId2)
-  if (!first || !second) return { ...state, lastMessage: '존재하지 않는 카드가 있습니다.' }
-  if (!first.revealed || !second.revealed) return { ...state, lastMessage: '공개된 카드만 짝으로 선택할 수 있습니다.' }
-  if (first.kind === second.kind) return { ...state, lastMessage: '관광지 카드와 특산물 카드를 한 장씩 선택하세요.' }
-  if (first.regionId !== second.regionId) return { ...state, lastMessage: '지역이 일치하지 않습니다.' }
-  if (state.claimed.includes(first.regionId)) return { ...state, lastMessage: '이미 획득한 지역입니다.' }
+  const isPair = first.regionId === second.regionId &&
+    ((first.kind === 'place' && second.kind === 'product') ||
+     (first.kind === 'product' && second.kind === 'place'))
+
+  if (!isPair) {
+    return {
+      ...state,
+      cards: state.cards.map((card) => card.id === firstId || card.id === secondId
+        ? { ...card, revealed: false }
+        : card),
+      phase: 'turnEnd',
+      selectedIds: [],
+      lastMessage: '짝이 맞지 않아 두 카드를 다시 뒤집었습니다. 다음 차례 버튼을 눌러 주세요.',
+    }
+  }
 
   const claimed = [...state.claimed, first.regionId]
-  const finished = claimed.length === REGIONS.length
+  const finished = REGIONS.every(({ id }) => claimed.includes(id))
   const regionName = REGIONS.find((region) => region.id === first.regionId)?.region ?? '해당 지역'
   return {
     ...state,
-    players: state.players.map((candidate) => candidate.id === playerId
-      ? { ...candidate, score: candidate.score + 1 }
+    players: state.players.map((candidate, index) => index === state.turn
+      ? { ...candidate, score: candidate.score + 1, collected: [...candidate.collected, first.regionId] }
       : candidate),
     claimed,
-    phase: finished ? 'finished' : state.phase,
+    selectedIds: [],
+    phase: finished ? 'finished' : 'turnEnd',
     lastMessage: finished
-      ? `${player.name}님이 ${regionName} 짝을 획득했습니다. 모든 짝을 찾아 게임이 끝났습니다.`
-      : `${player.name}님이 ${regionName} 짝을 획득했습니다.`,
+      ? `${player.name}님이 ${regionName} 캐릭터를 획득했습니다. 모든 짝을 찾아 게임이 끝났습니다.`
+      : `${player.name}님이 ${regionName} 캐릭터를 획득했습니다. 다음 차례 버튼을 눌러 주세요.`,
   }
 }
 
-/** Advance in player order. Once no cards are hidden, stay in the claim phase. */
+/** Advance only after a resolved turn; games never advance automatically. */
 export function nextTurn(state: GameState): GameState {
   if (state.phase === 'finished') return { ...state, lastMessage: '이미 게임이 끝났습니다.' }
-  if (state.phase !== 'claim') return { ...state, lastMessage: '카드 두 장을 공개한 후에 다음 차례로 넘길 수 있습니다.' }
+  if (state.phase !== 'turnEnd') return { ...state, lastMessage: '카드 두 장의 짝을 확인한 후 다음 차례로 넘길 수 있습니다.' }
+  if (state.players.length === 0) return { ...state, lastMessage: '참가자가 없습니다.' }
 
   const turn = (state.turn + 1) % state.players.length
-  const hasHiddenCards = state.cards.some((card) => !card.revealed)
   return {
     ...state,
     turn,
-    flipsThisTurn: 0,
-    phase: hasHiddenCards ? 'flip' : 'claim',
-    lastMessage: hasHiddenCards
-      ? `${state.players[turn].name}님의 차례입니다. 카드 두 장을 차례로 공개하세요.`
-      : `${state.players[turn].name}님의 차례입니다. 남은 공개된 짝을 획득하세요.`,
+    phase: 'flip',
+    selectedIds: [],
+    lastMessage: `${state.players[turn].name}님의 차례입니다. 카드 두 장을 차례로 공개하세요.`,
   }
 }
 

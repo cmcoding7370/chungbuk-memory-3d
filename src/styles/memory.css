@@ -149,10 +149,8 @@ html:has(.memory-app), body:has(.memory-app) {
 .memory-player-intro { margin: 8px 0 12px; color: #aaa08e; font-size: 10px; font-weight: 700; }
 .memory-player-list { display: flex; flex-direction: column; gap: 7px; }
 .memory-empty-players { padding: 15px 8px; border: 1px dashed #e9e1d1; border-radius: 10px; text-align: center; color: #aea18c; font-size: 11px; }
-.memory-player { width: 100%; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 7px 8px; border: 1px solid #ede7da; border-radius: 12px; background: #fffefa; text-align: left; transition: background .15s, border-color .15s, transform .15s; }
-.memory-player:not(:disabled):hover { background: #fff8e5; border-color: #e7cc89; transform: translateY(-1px); }
+.memory-player { width: 100%; min-width: 0; display: grid; grid-template-columns: 31px minmax(0, 1fr) auto; align-items: center; gap: 5px 8px; padding: 7px 8px; border: 1px solid #ede7da; border-radius: 12px; background: #fffefa; text-align: left; }
 .memory-player.is-current { background: #f8fbeF; border-color: #dceacb; }
-.memory-player.is-claiming { background: #fff3cb; border-color: #e4bb59; box-shadow: 0 0 0 2px #f7dfa5; }
 .memory-player-avatar, .memory-name-index { display: grid; place-items: center; flex: 0 0 auto; width: 31px; height: 31px; border-radius: 11px; font-size: 12px; font-weight: 900; color: #947440; }
 .memory-avatar-0 { background: #f9deb0; color: #ad773e; }
 .memory-avatar-1 { background: #e1edc8; color: #769850; }
@@ -160,12 +158,12 @@ html:has(.memory-app), body:has(.memory-app) {
 .memory-avatar-3 { background: #d9eaf0; color: #688f9e; }
 .memory-avatar-4 { background: #e7ddf1; color: #9079a1; }
 .memory-avatar-5 { background: #f5e5bf; color: #a88e4c; }
-.memory-player-name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 900; }
+.memory-player-name { min-width: 0; overflow-wrap: anywhere; font-size: 12px; font-weight: 900; }
 .memory-player-name small { display: inline-block; margin-left: 4px; color: #8ba96f; font-size: 9px; }
 .memory-player-score { flex: 0 0 auto; color: #b0a58e; font-size: 10px; font-weight: 700; white-space: nowrap; }
 .memory-player-score b { color: #6f8d51; font-size: 14px; }
-.memory-player-select { flex: 0 0 auto; padding: 4px 6px; border-radius: 7px; background: #f2eee4; color: #99876d; font-size: 9px; font-weight: 900; white-space: nowrap; }
-.memory-player.is-claiming .memory-player-select { background: #e7bd63; color: #fffdf3; }
+.memory-player-collection { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.memory-player-collection img { display: block; width: 30px; height: 30px; object-fit: contain; border: 1px solid #eadfc7; border-radius: 8px; background: #fffaf0; }
 .memory-status { display: flex; gap: 10px; padding: 14px; border: 1px solid #dce8d0; border-radius: 15px; background: #eff7e9; }
 .memory-status-icon { width: 20px; flex: 0 0 20px; color: #91b86c; }
 .memory-status h2 { margin: 0; color: #6e9259; font-size: 12px; font-weight: 900; }
@@ -177,7 +175,6 @@ html:has(.memory-app), body:has(.memory-app) {
 .memory-btn svg { width: 16px; height: 16px; }
 .memory-btn-primary { border: 1px solid #719348; background: linear-gradient(#8caf64, #779d53); box-shadow: inset 0 2px 0 #b7d293, 0 3px 0 #648443; color: #fffef5 !important; }
 .memory-btn-primary:disabled { opacity: .48; box-shadow: none; }
-.memory-btn-secondary { border: 1px solid #e4c980; background: #fff3ce; color: #927039 !important; }
 .memory-btn-quiet { min-height: 37px; border: 1px solid #e9dfce; background: #fffdf7; color: #91836f !important; }
 .memory-btn-quiet span { font-size: 18px; line-height: 1; }
 .memory-local-note { margin: 1px 0 0; text-align: center; color: #b6aa95; font-size: 10px; }
@@ -274,7 +271,6 @@ html:has(.memory-app), body:has(.memory-app) {
   .memory-status { grid-column: 1 / -1; }
   .memory-message { grid-column: 1 / -1; }
   .memory-actions { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; margin-top: 0; }
-  .memory-actions .memory-btn-secondary { grid-column: 1 / -1; grid-row: 2; }
   .memory-local-note { grid-column: 1 / -1; }
   .memory-welcome { min-height: 150px; }
   .memory-tips { grid-column: 1 / -1; }

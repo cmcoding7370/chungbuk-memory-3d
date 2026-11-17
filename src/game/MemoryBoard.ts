@@ -266,6 +266,17 @@ export class MemoryBoard {
     this.needsRender = true
   }
 
+  /** Screen coordinate of a card, used by the development-only interaction checks. */
+  cardScreenPoint(id: string): { x: number; y: number } | null {
+    const card = this.cards.get(id)
+    if (!card) return null
+    this.scene.updateMatrixWorld(true)
+    this.camera.updateMatrixWorld()
+    const point = card.root.getWorldPosition(new THREE.Vector3()).project(this.camera)
+    const bounds = this.renderer.domElement.getBoundingClientRect()
+    return { x: bounds.left + (point.x + 1) * bounds.width / 2, y: bounds.top + (1 - point.y) * bounds.height / 2 }
+  }
+
   /** Release the render loop, events, controls, GPU resources, and owned canvas. */
   dispose(): void {
     if (this.disposed) return

@@ -1,21 +1,20 @@
 import '../styles/memory.css'
+import manifest from '../../assets.lock.json'
+import { REGIONS } from '../game/memoryRules'
 
 export interface UIHandlers {
   onStart: (names: string[]) => void
-  onClaimPlayer: (id: number) => void
   onNextTurn: () => void
   onRestart: () => void
-  onCancelClaim: () => void
   onZoom: (action: 'in' | 'out' | 'reset') => void
 }
 
-type MemoryState = {
-  players: { id: number; name: string; score: number }[]
-  cards: { regionId: number; revealed: boolean }[]
+export type MemoryState = {
+  players: { id: number; name: string; score: number; collected: number[] }[]
   /** The zero-based index of the player whose turn it is. */
   turn: number
-  phase: 'flip' | 'claim' | 'finished'
-  flipsThisTurn: number
+  phase: 'flip' | 'resolving' | 'turnEnd' | 'finished'
+  selectedIds: string[]
   /** One entry for each collected pair. */
   claimed: number[]
   lastMessage: string
@@ -29,6 +28,9 @@ const mountedRoots = new WeakMap<HTMLElement, AbortController>()
 const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, character => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 })[character] ?? character)
+
+const mascotAssets = manifest.assets as Record<string, { path: string }>
+const regionsById = new Map(REGIONS.map(region => [region.id, region]))
 
 const leafIcon = `<svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M8 31C8 16 17 8 33 7c0 15-6 25-21 25" fill="#9acb59" stroke="#557d37" stroke-width="2.2" stroke-linejoin="round"/><path d="M8 33c6-8 12-13 20-18" stroke="#557d37" stroke-width="2.2" stroke-linecap="round"/></svg>`
 const sparkIcon = `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.5l2.1 6.4 6.4 2.1-6.4 2.1L12 19.5l-2.1-6.4L3.5 11l6.4-2.1L12 2.5z" fill="currentColor"/><path d="M19 15v5M16.5 17.5h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`
@@ -51,6 +53,7 @@ export class MemoryUI {
   private focusBeforeModal: HTMLElement | null = null
   private playerCount = 2
   private playerMarkup = ''
+  private wasFinished = false
 
   constructor(root: HTMLElement, handlers: UIHandlers) {
     mountedRoots.get(root)?.abort()
@@ -84,7 +87,7 @@ export class MemoryUI {
               <div class="memory-progress-track" role="progressbar" aria-label="짝 찾기 진행률" aria-valuemin="0" aria-valuemax="11" aria-valuenow="0"><span data-field="progress-bar"></span></div>
               <p class="memory-progress-caption">아직 <strong data-field="remaining">11쌍</strong>의 짝이 남았어요!</p>
             </section>
-            <section class="memory-tips" aria-label="간단한 게임 규칙"><span class="memory-tips-icon">✦</span><div><b>기억해 주세요!</b><p>공개한 카드는 다시<br>뒤집지 않아요.</p></div></section>
+            <section class="memory-tips" aria-label="간단한 게임 규칙"><span class="memory-tips-icon">✦</span><div><b>기억해 주세요!</b><p>짝이 다르면 두 카드는<br>다시 뒤집혀요.</p></div></section>
             <div class="memory-left-footer"><span>함께여서 더 즐거운</span><b>충북 여행의 시작</b><span class="memory-foot-flower" aria-hidden="true">✿</span></div>
           </aside>
 
@@ -96,10 +99,10 @@ export class MemoryUI {
 
           <aside class="memory-right" aria-label="차례 및 플레이어 상황">
             <section class="memory-turn-card" aria-labelledby="memory-turn-title"><div class="memory-turn-caption"><span class="memory-turn-dot"></span> 지금은 누구 차례?</div><div class="memory-turn-body"><div class="memory-turn-avatar" aria-hidden="true">✦</div><div><h2 id="memory-turn-title" data-field="turn-name">게임을 시작해요</h2><p data-field="turn-caption">차례마다 두 장씩 공개해요</p></div><span class="memory-turn-arrow">›</span></div></section>
-            <section class="memory-panel memory-players-panel" aria-labelledby="memory-players-title"><div class="memory-section-heading"><div><span class="memory-kicker">PLAYERS</span><h2 id="memory-players-title">함께하는 여행자</h2></div><span class="memory-players-icon">${peopleIcon}</span></div><p class="memory-player-intro" data-field="player-intro">카드를 공개한 뒤 누구나 도전할 수 있어요!</p><div class="memory-player-list" data-field="players"><div class="memory-empty-players">게임을 시작하면 여행자가 보여요.</div></div></section>
+            <section class="memory-panel memory-players-panel" aria-labelledby="memory-players-title"><div class="memory-section-heading"><div><span class="memory-kicker">PLAYERS</span><h2 id="memory-players-title">함께하는 여행자</h2></div><span class="memory-players-icon">${peopleIcon}</span></div><p class="memory-player-intro" data-field="player-intro">여행자들이 찾은 짝을 살펴봐요.</p><div class="memory-player-list" data-field="players" role="list"><div class="memory-empty-players">게임을 시작하면 여행자가 보여요.</div></div></section>
             <section class="memory-status" aria-labelledby="memory-status-title"><div class="memory-status-icon">${sparkIcon}</div><div><h2 id="memory-status-title">지금은 이렇게!</h2><p data-field="instruction">카드 두 장을 공개하고 짝을 찾아보세요.</p></div></section>
             <p class="memory-message" data-field="message" aria-live="polite">함께 충북 여행을 시작해 볼까요?</p>
-            <div class="memory-actions"><button type="button" class="memory-btn memory-btn-primary" data-action="next" disabled>다음 차례 ${arrowIcon}</button><button type="button" class="memory-btn memory-btn-secondary" data-action="cancel" hidden>정답 도전 취소</button><button type="button" class="memory-btn memory-btn-quiet" data-action="restart"><span aria-hidden="true">↻</span> 새 게임</button></div>
+            <div class="memory-actions"><button type="button" class="memory-btn memory-btn-primary" data-action="next" disabled>다음 차례 ${arrowIcon}</button><button type="button" class="memory-btn memory-btn-quiet" data-action="restart"><span aria-hidden="true">↻</span> 새 게임</button></div>
             <p class="memory-local-note"><span aria-hidden="true">●</span> 같은 기기에서 함께 플레이해요</p>
           </aside>
         </main>
@@ -115,7 +118,7 @@ export class MemoryUI {
         </section>
       </div>
 
-      <div class="memory-modal-layer" data-modal="rules" hidden><section class="memory-dialog memory-rules-dialog" role="dialog" aria-modal="true" aria-labelledby="memory-rules-title"><button type="button" class="memory-close" data-action="close-modal" aria-label="게임 방법 닫기">×</button><span class="memory-dialog-kicker">HOW TO PLAY</span><h2 id="memory-rules-title">함께 떠나는 게임 방법</h2><p class="memory-dialog-lead">관광지와 특산물, 우리 동네의 짝을 찾아요!</p><ol class="memory-rule-list"><li><b>한 차례에 두 장!</b><span>자기 차례에 뒤집힌 카드 두 장을 차례로 공개해요. 한 번 공개한 카드는 다시 뒤집지 않아요.</span></li><li><b>짝을 찾으면 누구나 도전!</b><span>누구든지 해당 선수의 정답 도전 버튼을 누르고, 공개된 관광지와 특산물 카드를 차례로 클릭해요.</span></li><li><b>함께 찾아 완주해요!</b><span>11쌍을 모두 획득하면 가장 많이 찾은 사람이 우승해요. 동점이면 공동 우승이에요.</span></li></ol><div class="memory-rules-note">같은 기기에서 먼저 클릭한 사람이 우선이에요.<br>온라인 기능은 추후 제공될 예정이에요.</div><button class="memory-btn memory-btn-primary memory-full-btn" type="button" data-action="close-modal">알겠어요!</button></section></div>
+      <div class="memory-modal-layer" data-modal="rules" hidden><section class="memory-dialog memory-rules-dialog" role="dialog" aria-modal="true" aria-labelledby="memory-rules-title"><button type="button" class="memory-close" data-action="close-modal" aria-label="게임 방법 닫기">×</button><span class="memory-dialog-kicker">HOW TO PLAY</span><h2 id="memory-rules-title">함께 떠나는 게임 방법</h2><p class="memory-dialog-lead">관광지와 특산물, 우리 동네의 짝을 찾아요!</p><ol class="memory-rule-list"><li><b>한 차례에 두 장!</b><span>자기 차례에 뒷면이 보이는 카드 두 장을 차례로 클릭해 공개해요.</span></li><li><b>같은 지역의 짝을 찾아요!</b><span>관광지와 특산물이 같은 지역이면 현재 차례 참가자가 그 지역 캐릭터를 자동으로 획득해요. 틀리면 잠시 보여 준 뒤 두 카드가 다시 뒤집혀요.</span></li><li><b>다음 차례로 출발!</b><span>결과를 확인한 뒤 다음 차례 버튼을 눌러요. 11쌍을 모두 찾으면 가장 많이 찾은 사람이 우승하고, 동점이면 공동 우승이에요.</span></li></ol><div class="memory-rules-note">같은 기기에서 차례대로 함께 플레이해요.<br>온라인 기능은 추후 제공될 예정이에요.</div><button class="memory-btn memory-btn-primary memory-full-btn" type="button" data-action="close-modal">알겠어요!</button></section></div>
 
       <div class="memory-modal-layer" data-modal="result" hidden><section class="memory-dialog memory-result-dialog" role="dialog" aria-modal="true" aria-labelledby="memory-result-title"><button type="button" class="memory-close" data-action="close-modal" aria-label="결과 닫기">×</button><div class="memory-result-medal" aria-hidden="true">✦</div><span class="memory-dialog-kicker">TRIP COMPLETE!</span><h2 id="memory-result-title">즐거운 여행 끝!</h2><p class="memory-dialog-lead">충북의 11가지 짝꿍을 모두 찾았어요.</p><div class="memory-winner"><span data-field="winner-label">축하해요, 우승자!</span><strong data-field="winners"></strong><small>모두 함께해서 더욱 즐거운 여행이었어요.</small></div><button class="memory-btn memory-btn-primary memory-full-btn" type="button" data-action="restart">새로운 여행 시작하기 ${arrowIcon}</button><button class="memory-result-close" type="button" data-action="close-modal">결과 닫기</button></section></div>
     `
@@ -127,7 +130,7 @@ export class MemoryUI {
     this.showModal('setup')
   }
 
-  render(state: MemoryState, claimingPlayer: number | null, selectedIds: string[]): void {
+  render(state: MemoryState): void {
     const found = Math.min(11, Math.max(0, state.claimed.length))
     this.get('[data-field="found"]').textContent = String(found)
     this.get('[data-field="remaining"]').textContent = `${11 - found}쌍`
@@ -135,41 +138,56 @@ export class MemoryUI {
     this.get('[role="progressbar"]').setAttribute('aria-valuenow', String(found))
     const current = state.players[state.turn]
     this.get('[data-field="turn-name"]').textContent = state.phase === 'finished' ? '여행 완료!' : current ? `${current.name}의 차례` : '게임을 시작해요'
-    this.get('[data-field="turn-caption"]').textContent = state.phase === 'finished' ? '모든 짝을 찾았어요' : '차례마다 두 장씩 공개해요'
+    this.get('[data-field="turn-caption"]').textContent = state.phase === 'finished' ? '모든 짝을 찾았어요' : state.phase === 'resolving' ? '짝을 확인하고 있어요' : state.phase === 'turnEnd' ? '다음 차례를 기다려요' : '차례마다 두 장씩 공개해요'
 
-    const canClaim = state.phase !== 'finished' && claimingPlayer === null &&
-      state.cards.filter(card => card.revealed && !state.claimed.includes(card.regionId)).length >= 2
     const playersMarkup = state.players.length ? state.players.map((player, index) => {
       const active = index === state.turn && state.phase !== 'finished'
-      const claiming = player.id === claimingPlayer
       const name = escapeHtml(player.name)
-      const label = escapeHtml(`${player.name} 정답 도전${claiming ? ', 선택됨' : ''}`)
       const score = Number.isFinite(player.score) ? player.score : 0
-      return `<button type="button" class="memory-player ${active ? 'is-current' : ''} ${claiming ? 'is-claiming' : ''}" data-player="${escapeHtml(String(player.id))}" aria-label="${label}" aria-pressed="${claiming}" ${!canClaim ? 'disabled' : ''}><span class="memory-player-avatar memory-avatar-${index % 6}">${index + 1}</span><span class="memory-player-name">${name}${active ? '<small>차례</small>' : ''}</span><span class="memory-player-score"><b>${score}</b> 쌍</span><span class="memory-player-select">${claiming ? '선택됨' : '도전'}</span></button>`
+      const mascots = player.collected.map(id => {
+        const region = regionsById.get(id)
+        const asset = mascotAssets[`assets/mascots/${id}.webp`]
+        if (!region || !asset) return ''
+        const label = escapeHtml(`${region.region} ${region.product}`)
+        return `<img src="${escapeHtml(asset.path)}" alt="${label}" title="${label}" width="30" height="30">`
+      }).join('')
+      const collection = mascots ? `<div class="memory-player-collection" role="group" aria-label="획득한 지역 캐릭터">${mascots}</div>` : ''
+      return `<div role="listitem" class="memory-player ${active ? 'is-current' : ''}"${active ? ' aria-current="true"' : ''}><span class="memory-player-avatar memory-avatar-${index % 6}" aria-hidden="true">${index + 1}</span><span class="memory-player-name">${name}${active ? '<small>차례</small>' : ''}</span><span class="memory-player-score"><b>${score}</b> 쌍</span>${collection}</div>`
     }).join('') : '<div class="memory-empty-players">게임을 시작하면 여행자가 보여요.</div>'
     if (playersMarkup !== this.playerMarkup) {
       this.get('[data-field="players"]').innerHTML = playersMarkup
       this.playerMarkup = playersMarkup
     }
-    this.get('[data-field="player-intro"]').textContent = state.phase === 'finished' ? '모두 함께 찾아낸 여행의 기록이에요.' : claimingPlayer !== null ? '먼저 도전한 여행자가 카드를 고르고 있어요.' : canClaim ? '짝을 찾은 사람을 선택해 도전해요!' : '공개된 카드가 두 장 이상이면 도전할 수 있어요.'
-    const claimant = state.players.find(player => player.id === claimingPlayer)
+    this.get('[data-field="player-intro"]').textContent = state.phase === 'finished' ? '모두 함께 찾아낸 여행의 기록이에요.' : '현재 차례의 여행자가 찾은 짝을 획득해요.'
     const instruction = state.phase === 'finished'
       ? '모든 짝을 찾았어요! 즐거운 여행이었나요?'
-      : claimant
-        ? selectedIds.length === 0
-          ? `${claimant.name}님, 공개된 관광지와 특산물 카드 두 장을 차례로 선택해 주세요.`
-          : `${claimant.name}님, 짝이 되는 공개된 카드를 선택해 주세요. (${Math.min(selectedIds.length, 2)}/2)`
-        : state.phase === 'flip'
-          ? state.flipsThisTurn === 0 ? '뒤집힌 카드 두 장을 차례로 클릭해 공개해 주세요.' : '카드 한 장을 더 클릭해 공개해 주세요. (1/2)'
-          : '짝을 발견했다면 누구든 여행자를 선택해 정답에 도전해요!'
+      : state.phase === 'resolving'
+        ? '짝을 확인하고 있어요. 잠시 기다려 주세요.'
+        : state.phase === 'turnEnd'
+          ? '다음 차례를 눌러 주세요.'
+          : state.selectedIds.length === 0
+            ? '뒤집힌 카드 두 장을 차례로 클릭해 공개해 주세요.'
+            : '카드 한 장 더 클릭해 공개해 주세요. (1/2)'
     this.get('[data-field="instruction"]').textContent = instruction
     this.get('[data-field="message"]').textContent = state.lastMessage || '함께 충북 여행을 시작해 볼까요?'
     const next = this.get<HTMLButtonElement>('[data-action="next"]')
-    next.disabled = !state.players.length || state.phase !== 'claim' || claimingPlayer !== null
-    this.get<HTMLButtonElement>('[data-action="cancel"]').hidden = claimingPlayer === null || state.phase === 'finished'
+    next.disabled = state.phase !== 'turnEnd'
+
+    const finished = state.phase === 'finished'
+    if (!finished && this.wasFinished) {
+      if (this.modalUnderRules === 'result') this.modalUnderRules = null
+      if (this.activeModal === 'result') this.showModal(null)
+    }
+    if (finished && !this.wasFinished) {
+      const topScore = Math.max(...state.players.map(player => player.score))
+      const winners = state.players.filter(player => player.score === topScore).map(player => player.name)
+      this.modalUnderRules = null
+      this.showResult(winners)
+    }
+    this.wasFinished = finished
   }
 
-  showResult(winners: string[]): void {
+  private showResult(winners: string[]): void {
     this.get('[data-field="winner-label"]').textContent = winners.length > 1 ? '축하해요, 공동 우승!' : '축하해요, 우승자!'
     this.get('[data-field="winners"]').textContent = winners.length ? winners.join(' · ') : '모두 수고했어요!'
     this.showModal('result')
@@ -224,13 +242,9 @@ export class MemoryUI {
   private readonly onClick = (event: MouseEvent): void => {
     const target = event.target instanceof Element ? event.target.closest<HTMLElement>('button') : null
     if (!target || !this.root.contains(target)) return
+    if (target instanceof HTMLButtonElement && target.disabled) return
     if (target.dataset.count) {
       this.updateCount(Number(target.dataset.count))
-      return
-    }
-    if (target.dataset.player !== undefined) {
-      const id = Number(target.dataset.player)
-      if (Number.isFinite(id)) this.handlers.onClaimPlayer(id)
       return
     }
     switch (target.dataset.action) {
@@ -240,7 +254,6 @@ export class MemoryUI {
         break
       case 'close-modal': this.closeModal(); break
       case 'next': this.handlers.onNextTurn(); break
-      case 'cancel': this.handlers.onCancelClaim(); break
       case 'zoom-in': this.handlers.onZoom('in'); break
       case 'zoom-out': this.handlers.onZoom('out'); break
       case 'zoom-reset': this.handlers.onZoom('reset'); break
