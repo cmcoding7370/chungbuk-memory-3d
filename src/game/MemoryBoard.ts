@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { getModelUrl } from './modelUrls'
+import { getTextureUrl } from './textureUrls'
 
 /** The game owns card state. This class only displays it and reports card clicks. */
 export interface VisualCard {
@@ -35,6 +36,11 @@ const CARD_DEPTH = 0.1
 const BOARD_WIDTH = 7.75
 const BOARD_LENGTH = 11.6
 const RESTING_CARD_Y = 0.14
+const DEFAULT_VIEW = new THREE.Vector3(0, 22, 13)
+const DESKTOP_MAX_PIXEL_RATIO = 2.5
+const TOUCH_MAX_PIXEL_RATIO = 2
+const DESKTOP_PIXEL_BUDGET = 8_500_000
+const TOUCH_PIXEL_BUDGET = 4_000_000
 // Normalized positions of the matching regional characters in the supplied map artwork.
 // Order: 청주, 충주, 단양, 제천, 음성, 괴산, 진천, 증평, 보은, 옥천, 영동.
 const MARKER_UV: ReadonlyArray<readonly [number, number]> = [
@@ -80,8 +86,34 @@ function makeCanvas(width: number, height: number): HTMLCanvasElement {
   return canvas
 }
 
-function boardAsset(path: string): string {
-  return new URL(path, document.baseURI).href
+/** Avoid excessive fill rate on large or high-density displays without blurring small canvases. */
+function renderPixelRatio(width: number, height: number): number {
+  const touch = window.matchMedia?.('(pointer: coarse)').matches ?? false
+  const limit = touch ? TOUCH_MAX_PIXEL_RATIO : DESKTOP_MAX_PIXEL_RATIO
+  const budget = touch ? TOUCH_PIXEL_BUDGET : DESKTOP_PIXEL_BUDGET
+  const deviceRatio = window.devicePixelRatio || 1
+  return Math.min(deviceRatio, limit, Math.sqrt(budget / (width * height)))
+}
+
+/** Fit the card wings and their raised flip animation, retaining perspective and breathing room. */
+function defaultFitDistance(aspect: number, fov: number): number {
+  const direction = DEFAULT_VIEW.clone().normalize()
+  const tangent = Math.tan(THREE.MathUtils.degToRad(fov / 2))
+  const frame = 0.88
+  const halfWidth = 6.11 + (CARD_WIDTH + 0.16) / 2
+  const halfLength = 5 + (CARD_HEIGHT + 0.16) / 2
+  let distance = 0
+  // Perspective makes the near edge larger. Test all vertical/depth corners, including raised cards.
+  for (const y of [0, 1.5]) {
+    for (const z of [-halfLength, halfLength]) {
+      const towardsCamera = y * direction.y + z * direction.z
+      const vertical = y * direction.z - z * direction.y
+      distance = Math.max(distance,
+        towardsCamera + halfWidth / (tangent * aspect * frame),
+        towardsCamera + Math.abs(vertical) / (tangent * frame))
+    }
+  }
+  return distance
 }
 
 /**
@@ -103,11 +135,11 @@ export class MemoryBoard {
   private readonly materials = new Set<THREE.Material>()
   private readonly textures = new Set<THREE.Texture>()
   private readonly skeletons = new Set<THREE.Skeleton>()
-  private readonly faceMaterials = new Map<string, THREE.MeshStandardMaterial>()
+  private readonly faceMaterials = new Map<string, THREE.MeshBasicMaterial>()
   private readonly bodyGeometry: THREE.ExtrudeGeometry
   private readonly faceGeometry: THREE.ShapeGeometry
   private readonly bodyMaterial: THREE.MeshStandardMaterial
-  private readonly backMaterial: THREE.MeshStandardMaterial
+  private readonly backMaterial: THREE.MeshBasicMaterial
   private readonly highlightGeometry: THREE.ShapeGeometry
   private readonly highlightMaterial: THREE.MeshBasicMaterial
   private readonly resizeObserver: ResizeObserver | null
@@ -127,12 +159,12 @@ export class MemoryBoard {
     private readonly onCardClick: (id: string) => void,
   ) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping
     this.renderer.toneMappingExposure = 1.16
     this.renderer.shadowMap.enabled = true
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    // Current Three.js already falls back from the removed PCFSoft mode to PCF.
+    this.renderer.shadowMap.type = THREE.PCFShadowMap
     this.renderer.domElement.style.display = 'block'
     this.renderer.domElement.style.width = '100%'
     this.renderer.domElement.style.height = '100%'
@@ -141,7 +173,7 @@ export class MemoryBoard {
     this.container.appendChild(this.renderer.domElement)
 
     this.scene.background = new THREE.Color('#dfc6a0')
-    this.camera.position.set(0, 20, 16)
+    this.camera.position.copy(DEFAULT_VIEW)
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
     this.controls.target.set(0, 0, 0)
     this.controls.enableDamping = true
@@ -165,10 +197,11 @@ export class MemoryBoard {
     this.bodyGeometry.translate(0, 0, -CARD_DEPTH / 2)
     this.faceGeometry = this.keepGeometry(cardFaceGeometry(CARD_WIDTH - 0.06, CARD_HEIGHT - 0.06))
     this.bodyMaterial = this.keepMaterial(new THREE.MeshStandardMaterial({ color: '#ead5ad', roughness: 0.76 }))
-    this.backMaterial = this.keepMaterial(new THREE.MeshStandardMaterial({
-      map: this.makeBackFallback(), color: '#ffffff', roughness: 0.78,
+    // Printed artwork is unlit and bypasses scene tone mapping; the card body remains 3D and lit.
+    this.backMaterial = this.keepMaterial(new THREE.MeshBasicMaterial({
+      map: this.makeBackFallback(), color: '#ffffff', toneMapped: false,
     }))
-    this.loadIntoMaterial(boardAsset('assets/cards/back.webp'), this.backMaterial)
+    this.loadIntoMaterial(getTextureUrl('assets/cards-hd/back.webp'), this.backMaterial)
 
     const highlightShape = roundedRectangle(CARD_WIDTH + 0.16, CARD_HEIGHT + 0.16, 0.13)
     const hole = roundedRectangle(CARD_WIDTH + 0.055, CARD_HEIGHT + 0.055, 0.105)
@@ -260,7 +293,7 @@ export class MemoryBoard {
 
   resetView(): void {
     this.controls.target.set(0, 0, 0)
-    this.camera.position.set(0, 20, 16)
+    this.camera.position.copy(DEFAULT_VIEW)
     this.fitDistance = 0
     this.resize()
     this.needsRender = true
@@ -317,6 +350,10 @@ export class MemoryBoard {
 
   private keepTexture<T extends THREE.Texture>(texture: T): T {
     texture.colorSpace = THREE.SRGBColorSpace
+    // Trilinear mipmaps prevent minification shimmer; anisotropy retains detail at oblique angles.
+    texture.magFilter = THREE.LinearFilter
+    texture.minFilter = THREE.LinearMipmapLinearFilter
+    texture.generateMipmaps = true
     texture.anisotropy = Math.min(this.renderer.capabilities.getMaxAnisotropy(), 8)
     this.textures.add(texture)
     return texture
@@ -326,7 +363,7 @@ export class MemoryBoard {
     return this.keepTexture(new THREE.CanvasTexture(canvas))
   }
 
-  private loadIntoMaterial(url: string, material: THREE.MeshStandardMaterial, onLoad?: (texture: THREE.Texture) => void): void {
+  private loadIntoMaterial(url: string, material: THREE.MeshBasicMaterial, onLoad?: (texture: THREE.Texture) => void): void {
     const texture = this.loader.load(url, (loaded) => {
       if (this.disposed) {
         loaded.dispose()
@@ -481,15 +518,15 @@ export class MemoryBoard {
     ctx.fillStyle = '#958775'
     ctx.font = '28px sans-serif'
     ctx.fillText('지도 이미지를 준비하고 있어요', 370, 535)
-    const material = this.keepMaterial(new THREE.MeshStandardMaterial({ map: this.canvasTexture(canvas), roughness: 0.96 }))
+    // Keep the supplied map colors independent of warm lights and ACES; surrounding objects stay lit.
+    const material = this.keepMaterial(new THREE.MeshBasicMaterial({ map: this.canvasTexture(canvas), toneMapped: false }))
     const map = new THREE.Mesh(this.keepGeometry(new THREE.PlaneGeometry(1, 1)), material)
     map.name = 'chungbuk-map'
     map.rotation.x = -Math.PI / 2
     map.position.y = 0.294
     map.scale.set(BOARD_WIDTH - 0.65, BOARD_LENGTH - 0.65, 1)
-    map.receiveShadow = true
     this.scene.add(map)
-    this.loadIntoMaterial(boardAsset('assets/chungbuk-map.webp'), material, (texture) => {
+    this.loadIntoMaterial(getTextureUrl('assets/chungbuk-map-hd.webp'), material, (texture) => {
       const image = texture.image as { width?: number; height?: number } | undefined
       if (!image?.width || !image.height) return
       const aspect = image.width / image.height
@@ -661,12 +698,13 @@ export class MemoryBoard {
     body.receiveShadow = true
     pivot.add(body)
     const back = new THREE.Mesh(this.faceGeometry, this.backMaterial)
-    back.position.z = CARD_DEPTH / 2 + 0.021
+    // The bevel reaches 0.02 beyond the body: keep a visible depth-buffer safety gap.
+    back.position.z = CARD_DEPTH / 2 + 0.03
     pivot.add(back)
 
     const face = new THREE.Mesh(this.faceGeometry, this.getFaceMaterial(card, oneBased))
     face.rotation.y = Math.PI
-    face.position.z = -(CARD_DEPTH / 2 + 0.021)
+    face.position.z = -(CARD_DEPTH / 2 + 0.03)
     pivot.add(face)
     const highlight = new THREE.Mesh(this.highlightGeometry, this.highlightMaterial)
     highlight.position.z = -0.10
@@ -675,16 +713,16 @@ export class MemoryBoard {
     return { root, pivot, hit: body, highlight, targetAngle: 0 }
   }
 
-  private getFaceMaterial(card: VisualCard, oneBased: boolean): THREE.MeshStandardMaterial {
+  private getFaceMaterial(card: VisualCard, oneBased: boolean): THREE.MeshBasicMaterial {
     const explicit = /^(p|s)(10|[0-9])$/i.exec(card.id)
     const prefix = explicit ? explicit[1].toLowerCase() : card.kind === 'place' ? 'p' : 's'
     const index = explicit ? Number(explicit[2]) : card.regionId - (oneBased ? 1 : 0)
     const key = `${prefix}${index}`
     const existing = this.faceMaterials.get(key)
     if (existing) return existing
-    const material = this.keepMaterial(new THREE.MeshStandardMaterial({ map: this.makeFaceFallback(card), roughness: 0.8 }))
+    const material = this.keepMaterial(new THREE.MeshBasicMaterial({ map: this.makeFaceFallback(card), toneMapped: false }))
     this.faceMaterials.set(key, material)
-    if (Number.isInteger(index) && index >= 0 && index <= 10) this.loadIntoMaterial(boardAsset(`assets/cards/${key}.webp`), material)
+    if (Number.isInteger(index) && index >= 0 && index <= 10) this.loadIntoMaterial(getTextureUrl(`assets/cards-hd/${key}.webp`), material)
     return material
   }
 
@@ -695,11 +733,11 @@ export class MemoryBoard {
     const aspect = width / height
     this.camera.aspect = aspect
     this.camera.updateProjectionMatrix()
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+    const pixelRatio = renderPixelRatio(width, height)
+    if (this.renderer.getPixelRatio() !== pixelRatio) this.renderer.setPixelRatio(pixelRatio)
     this.renderer.setSize(width, height, false)
     // Fit both card wings even in portrait. Preserve the user's relative zoom on later resizes.
-    const tangent = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2))
-    const newFitDistance = Math.max(26, 15.5 / (2 * tangent * aspect) * 1.12)
+    const newFitDistance = defaultFitDistance(aspect, this.camera.fov)
     const offset = this.camera.position.clone().sub(this.controls.target)
     const distance = this.fitDistance ? offset.length() * newFitDistance / this.fitDistance : newFitDistance
     offset.setLength(THREE.MathUtils.clamp(distance, this.controls.minDistance, this.controls.maxDistance))

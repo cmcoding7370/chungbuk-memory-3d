@@ -20,6 +20,167 @@
   },
   "bundles": {},
   "assets": {
+    "assets/cards-hd/back.webp": {
+      "path": "/manus-storage/game/sha256/613fb12516925d0412eff14f972ac23f5fb7565c900d362a6d2b632889b30058.webp",
+      "sha256": "sha256:613fb12516925d0412eff14f972ac23f5fb7565c900d362a6d2b632889b30058",
+      "size": 405476,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p0.webp": {
+      "path": "/manus-storage/game/sha256/0d3247eaf916412a445a85b1fd3a1ee750c01ca1db81739780b0d97403566fec.webp",
+      "sha256": "sha256:0d3247eaf916412a445a85b1fd3a1ee750c01ca1db81739780b0d97403566fec",
+      "size": 185342,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p1.webp": {
+      "path": "/manus-storage/game/sha256/38a6fd67ee8e490d0988534874a1862899bc9faf10fa2ba6977ae39244892498.webp",
+      "sha256": "sha256:38a6fd67ee8e490d0988534874a1862899bc9faf10fa2ba6977ae39244892498",
+      "size": 155798,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p10.webp": {
+      "path": "/manus-storage/game/sha256/da4aa0d75b287e6a8fd9fb33c721e58f59e21af89728dbe600f158790f0bd37d.webp",
+      "sha256": "sha256:da4aa0d75b287e6a8fd9fb33c721e58f59e21af89728dbe600f158790f0bd37d",
+      "size": 174454,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p2.webp": {
+      "path": "/manus-storage/game/sha256/941de4bc6f8cfcfbaaa3c244249e07c9908f54b6e3ce4dc455c845f3d021afe4.webp",
+      "sha256": "sha256:941de4bc6f8cfcfbaaa3c244249e07c9908f54b6e3ce4dc455c845f3d021afe4",
+      "size": 170648,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p3.webp": {
+      "path": "/manus-storage/game/sha256/0d4517841254c871da6b78182a387a21563ecff10b8a246ce660e6c024dd4ed3.webp",
+      "sha256": "sha256:0d4517841254c871da6b78182a387a21563ecff10b8a246ce660e6c024dd4ed3",
+      "size": 164208,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p4.webp": {
+      "path": "/manus-storage/game/sha256/3dc8f996c180804e42892af4bbe07c8361cda829b7b8ae76504589596b388f64.webp",
+      "sha256": "sha256:3dc8f996c180804e42892af4bbe07c8361cda829b7b8ae76504589596b388f64",
+      "size": 153280,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p5.webp": {
+      "path": "/manus-storage/game/sha256/ae0633ab89b8e29bf4927998818381c5c55c6645d630aebdfac49a041bdd9849.webp",
+      "sha256": "sha256:ae0633ab89b8e29bf4927998818381c5c55c6645d630aebdfac49a041bdd9849",
+      "size": 194944,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p6.webp": {
+      "path": "/manus-storage/game/sha256/c62d369def9ebdf27071f8d93f1493f43b228dbf6f51d5d997b154ce31c55b26.webp",
+      "sha256": "sha256:c62d369def9ebdf27071f8d93f1493f43b228dbf6f51d5d997b154ce31c55b26",
+      "size": 175820,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p7.webp": {
+      "path": "/manus-storage/game/sha256/efbd7e80b67d7cd4a178928854169c1b5453ea4126d27848cc4d108c8979c23b.webp",
+      "sha256": "sha256:efbd7e80b67d7cd4a178928854169c1b5453ea4126d27848cc4d108c8979c23b",
+      "size": 163900,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p8.webp": {
+      "path": "/manus-storage/game/sha256/27882fc8abdbf4df742ce953600305cd32fddeb13de248e4147e0bc5405c81b4.webp",
+      "sha256": "sha256:27882fc8abdbf4df742ce953600305cd32fddeb13de248e4147e0bc5405c81b4",
+      "size": 176730,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/p9.webp": {
+      "path": "/manus-storage/game/sha256/bb894034169f8ac6d38e65abd3a3591e6595b9886c1e3e1f75ace94d18b2b15b.webp",
+      "sha256": "sha256:bb894034169f8ac6d38e65abd3a3591e6595b9886c1e3e1f75ace94d18b2b15b",
+      "size": 174502,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s0.webp": {
+      "path": "/manus-storage/game/sha256/16bf93d57e79668ac0c13681adccb605cfdcc4afb056573bc61bf983d3a317fc.webp",
+      "sha256": "sha256:16bf93d57e79668ac0c13681adccb605cfdcc4afb056573bc61bf983d3a317fc",
+      "size": 93216,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s1.webp": {
+      "path": "/manus-storage/game/sha256/1bea22f7982775f90af8558f3022f99403c744ee1a999d74b7c2824d26f64e17.webp",
+      "sha256": "sha256:1bea22f7982775f90af8558f3022f99403c744ee1a999d74b7c2824d26f64e17",
+      "size": 59822,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s10.webp": {
+      "path": "/manus-storage/game/sha256/af648a7be5bc2f499678a22e2ac22ce63fcf79a73932a373d50365fc1e9122a3.webp",
+      "sha256": "sha256:af648a7be5bc2f499678a22e2ac22ce63fcf79a73932a373d50365fc1e9122a3",
+      "size": 59336,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s2.webp": {
+      "path": "/manus-storage/game/sha256/a30471e2238ffeed5bfa978e0306873ca3c475228d6308114c5b12585e600f3d.webp",
+      "sha256": "sha256:a30471e2238ffeed5bfa978e0306873ca3c475228d6308114c5b12585e600f3d",
+      "size": 49252,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s3.webp": {
+      "path": "/manus-storage/game/sha256/c10ad17f183282d2b379687ef8f5e6008c9c7dfefaff42219799daa52bac7f63.webp",
+      "sha256": "sha256:c10ad17f183282d2b379687ef8f5e6008c9c7dfefaff42219799daa52bac7f63",
+      "size": 99498,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s4.webp": {
+      "path": "/manus-storage/game/sha256/883804c258bf84ea521b52daf1fca3165741892d0b21792ec86d821313c449ba.webp",
+      "sha256": "sha256:883804c258bf84ea521b52daf1fca3165741892d0b21792ec86d821313c449ba",
+      "size": 50474,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s5.webp": {
+      "path": "/manus-storage/game/sha256/39470902ba9f8a8217762c5f0b149ee0ed51c2fbf16063abf628c43dd05c9483.webp",
+      "sha256": "sha256:39470902ba9f8a8217762c5f0b149ee0ed51c2fbf16063abf628c43dd05c9483",
+      "size": 80832,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s6.webp": {
+      "path": "/manus-storage/game/sha256/ff7ae15f298ebcf4cb84f82d374ab99e392b3995c3e7394446c74da62162d974.webp",
+      "sha256": "sha256:ff7ae15f298ebcf4cb84f82d374ab99e392b3995c3e7394446c74da62162d974",
+      "size": 70038,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s7.webp": {
+      "path": "/manus-storage/game/sha256/3ed4b9a7a74da2b1c1aade4912f06668d2603581fe3922bba19a2878361b1cf5.webp",
+      "sha256": "sha256:3ed4b9a7a74da2b1c1aade4912f06668d2603581fe3922bba19a2878361b1cf5",
+      "size": 82526,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s8.webp": {
+      "path": "/manus-storage/game/sha256/13472db7237e82a3ee4cc4dcc13c6559a550b74ce4bc2b379b47b8462d5d20dc.webp",
+      "sha256": "sha256:13472db7237e82a3ee4cc4dcc13c6559a550b74ce4bc2b379b47b8462d5d20dc",
+      "size": 70190,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
+    "assets/cards-hd/s9.webp": {
+      "path": "/manus-storage/game/sha256/72d6bfa16e8977cb83161cbd11060fa61c1f93a5fcb07450fa4ab22ca47289ff.webp",
+      "sha256": "sha256:72d6bfa16e8977cb83161cbd11060fa61c1f93a5fcb07450fa4ab22ca47289ff",
+      "size": 46828,
+      "assetType": "image",
+      "groupId": "memory-cards"
+    },
     "assets/cards/back.webp": {
       "path": "/manus-storage/game/sha256/39726a065d3f059e0c7e9d04c9990f6c79ff08d8905cef2d3aaf4aec6f41fba0.webp",
       "sha256": "sha256:39726a065d3f059e0c7e9d04c9990f6c79ff08d8905cef2d3aaf4aec6f41fba0",
@@ -180,6 +341,13 @@
       "size": 15770,
       "assetType": "image",
       "groupId": "memory-cards"
+    },
+    "assets/chungbuk-map-hd.webp": {
+      "path": "/manus-storage/game/sha256/b82f5534295485c7375978856b76e29ef62f0b90ad5de71a5d50eade7b55b3bf.webp",
+      "sha256": "sha256:b82f5534295485c7375978856b76e29ef62f0b90ad5de71a5d50eade7b55b3bf",
+      "size": 2902526,
+      "assetType": "image",
+      "groupId": "travel-board"
     },
     "assets/chungbuk-map.webp": {
       "path": "/manus-storage/game/sha256/c75f0b81b77ca5fb6e26e08042aedb8cdefd127bc53bfa59240712d90132905f.webp",

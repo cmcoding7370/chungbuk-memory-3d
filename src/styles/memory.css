@@ -78,7 +78,7 @@ html:has(.memory-app), body:has(.memory-app) {
 .memory-header-help span { width: 17px; height: 17px; line-height: 16px; border: 1.5px solid #a79270; border-radius: 50%; text-align: center; }
 .memory-header-help:hover { background: #fff6df; }
 
-.memory-layout { flex: 1 0 auto; min-height: 0; display: grid; grid-template-columns: 224px minmax(0, 1fr) 270px; gap: 15px; padding: 16px; }
+.memory-layout { flex: 1 0 auto; min-height: 0; display: grid; grid-template-columns: 224px minmax(0, 1fr) 370px; gap: 15px; padding: 16px; }
 .memory-left, .memory-right { min-width: 0; display: flex; flex-direction: column; gap: 13px; }
 .memory-panel { background: #fffdf7; border: 1px solid var(--mem-border); border-radius: 18px; box-shadow: 0 3px 0 #e5dbc6, 0 9px 20px #8a76550b; }
 .memory-welcome { min-height: 194px; position: relative; isolation: isolate; overflow: hidden; padding: 18px 18px 22px; border: 1px solid #e8d59d; border-radius: 18px; background: linear-gradient(150deg, #fff5c9 5%, #ffefab 64%, #e2eab7 100%); box-shadow: 0 3px 0 #e7d5a2; }
@@ -143,6 +143,19 @@ html:has(.memory-app), body:has(.memory-app) {
 .memory-turn-body h2 { margin: 0; color: #6a5030; font-size: 15px; font-weight: 900; letter-spacing: -.04em; overflow-wrap: anywhere; }
 .memory-turn-body p { margin: 2px 0 0; color: #aa9574; font-size: 10px; font-weight: 700; }
 .memory-turn-arrow { margin-left: auto; color: #d4bd83; font-size: 24px; }
+.memory-preview-panel { padding: 14px; background: linear-gradient(155deg, #fffef9, #faf6e9); }
+.memory-preview-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.memory-preview-heading h2 { margin: 2px 0 0; color: #5c4b32; font-size: 15px; font-weight: 900; letter-spacing: -.04em; }
+.memory-preview-count { flex: none; padding: 5px 9px; border: 1px solid #e0ebd2; border-radius: 99px; background: #f0f7e9; color: #6f9156; font-size: 11px; font-weight: 900; }
+.memory-preview-caption { margin: 5px 0 10px; color: #8c806b; font-size: 11px; font-weight: 700; }
+.memory-preview-cards { display: flex; justify-content: center; align-items: flex-start; gap: 10px; }
+.memory-preview-empty { width: 100%; margin: 0; padding: 15px 10px; border: 1px dashed #e6dcc8; border-radius: 12px; color: #9b8d77; background: #fffdf8; font-size: 11px; font-weight: 700; line-height: 1.6; text-align: center; }
+.memory-preview-card { flex: 1 1 0; min-width: 0; max-width: 220px; margin: 0; }
+.memory-preview-card img { display: block; width: 100%; height: auto; border: 1px solid #e5d7bc; border-radius: 10px; background: #fffaf0; box-shadow: 0 3px 8px #6d573322; }
+.memory-preview-card figcaption { padding: 6px 2px 0; line-height: 1.35; overflow-wrap: anywhere; }
+.memory-preview-card figcaption span, .memory-preview-card figcaption b { display: block; }
+.memory-preview-card figcaption span { color: #8b806b; font-size: 10px; font-weight: 700; }
+.memory-preview-card figcaption b { margin-top: 2px; color: #5e4b31; font-size: 12px; font-weight: 900; }
 .memory-players-panel { padding: 16px 14px 14px; }
 .memory-players-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 11px; background: #edf4e5; color: #789c61; }
 .memory-players-icon svg { width: 19px; }
@@ -169,7 +182,7 @@ html:has(.memory-app), body:has(.memory-app) {
 .memory-status h2 { margin: 0; color: #6e9259; font-size: 12px; font-weight: 900; }
 .memory-status p { margin: 4px 0 0; color: #819479; font-size: 11px; font-weight: 700; line-height: 1.55; overflow-wrap: anywhere; }
 .memory-message { min-height: 0; margin: -4px 3px 0; color: #a0937d; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
-.memory-actions { display: grid; gap: 8px; margin-top: auto; }
+.memory-actions { display: grid; gap: 8px; margin-top: 0; }
 .memory-btn { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 12px; font-size: 12px !important; font-weight: 900 !important; transition: transform .15s, filter .15s; }
 .memory-btn:not(:disabled):hover { filter: brightness(1.03); transform: translateY(-1px); }
 .memory-btn svg { width: 16px; height: 16px; }
@@ -224,8 +237,12 @@ html:has(.memory-app), body:has(.memory-app) {
 .memory-winner small { color: #b1a38b; font-size: 10px; }
 .memory-result-close { margin-top: 16px; }
 
+/* The side panel may grow as cards open; keep the 3D board steady and in reach. */
+@media (min-width: 761px) {
+  .memory-board-panel { position: sticky; top: 12px; align-self: start; height: max(500px, calc(100dvh - 114px)); }
+}
 @media (max-width: 1200px) {
-  .memory-layout { grid-template-columns: 195px minmax(0, 1fr) 245px; gap: 11px; padding: 12px; }
+  .memory-layout { grid-template-columns: 195px minmax(0, 1fr) 320px; gap: 11px; padding: 12px; }
   .memory-header { padding-inline: 17px; }
   .memory-welcome { padding-inline: 15px; }
   .memory-progress-panel { padding: 14px; }
@@ -233,7 +250,7 @@ html:has(.memory-app), body:has(.memory-app) {
 @media (max-width: 980px) {
   .memory-header { grid-template-columns: 1fr auto; }
   .memory-header-middle { display: none; }
-  .memory-layout { grid-template-columns: minmax(0, 1fr) 245px; }
+  .memory-layout { grid-template-columns: minmax(0, 1fr) 300px; }
   .memory-left { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: stretch; }
   .memory-welcome { min-height: 145px; }
   .memory-welcome h1 { font-size: 18px; }
@@ -242,7 +259,7 @@ html:has(.memory-app), body:has(.memory-app) {
   .memory-tips { align-items: center; }
   .memory-board-frame { min-height: 420px; }
 }
-@media (max-width: 650px) {
+@media (max-width: 760px) {
   .memory-app { height: 100dvh; }
   .memory-header { min-height: 68px; padding: 10px 13px; gap: 6px; }
   .memory-brand { gap: 8px; }
@@ -265,6 +282,7 @@ html:has(.memory-app), body:has(.memory-app) {
   .memory-board-bottom { font-size: 9px; }
   .memory-board-bottom > span:last-child { display: none; }
   .memory-turn-card { grid-column: 1 / -1; }
+  .memory-preview-panel { grid-column: 1 / -1; order: -1; }
   .memory-turn-body { margin-top: 8px; }
   .memory-players-panel { grid-column: 1 / -1; }
   .memory-player-list { display: grid; grid-template-columns: 1fr 1fr; }

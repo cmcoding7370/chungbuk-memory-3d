@@ -65,13 +65,20 @@ try {
 
   // A mismatched pair remains visible while resolving, then both 3D cards close again.
   await click3DCard(page, 'p0')
+  ensure(await page.locator('[data-field="preview-cards"] img').count() === 1, 'the first revealed card was not enlarged')
   ensure(await page.locator('[data-action="next"]').isDisabled(), 'turn can advance after only one card')
   await click3DCard(page, 's1')
-  let current = await state(page)
+  const resolving = await page.evaluate(() => ({
+    game: window.__memory.getState(),
+    previewCount: document.querySelectorAll('[data-field="preview-cards"] img').length,
+  }))
+  let current = resolving.game
   ensure(current.phase === 'resolving' && current.cards.find(c => c.id === 'p0').revealed && current.cards.find(c => c.id === 's1').revealed, 'two cards were not shown while resolving')
+  ensure(resolving.previewCount === 2, `both revealed cards were not enlarged: ${resolving.previewCount}`)
   await waitForResolution(page)
   current = await state(page)
   ensure(!current.cards.find(c => c.id === 'p0').revealed && !current.cards.find(c => c.id === 's1').revealed, 'mismatched cards did not flip back')
+  ensure(await page.locator('[data-field="preview-cards"] img').count() === 0, 'closed cards remained visible in the enlarged view')
   ensure(current.players.every(p => p.score === 0), 'a mismatch incorrectly awarded a character')
   await page.locator('[data-action="next"]').click()
   await page.waitForTimeout(650)
@@ -83,11 +90,15 @@ try {
   current = await state(page)
   ensure(current.claimed.includes(0) && current.players[1].score === 1 && current.players[1].collected.includes(0), 'matching pair did not award the correct player and character')
   ensure(current.cards.find(c => c.id === 'p0').revealed && current.cards.find(c => c.id === 's0').revealed, 'matching cards did not remain open')
+  ensure(await page.locator('[data-field="preview-cards"] img').count() === 2, 'matched cards disappeared from the enlarged view')
+  await page.waitForFunction(() => [...document.querySelectorAll('[data-field="preview-cards"] img')].every(img => img.complete && img.naturalWidth >= 680), null, { timeout: 8000 })
+  ensure(await page.locator('[data-action="next"]').evaluate(button => { const r = button.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight }), 'next turn button is outside the desktop viewport')
   await page.waitForSelector('[data-field="players"] img', { timeout: 5000 })
   await page.screenshot({ path: `${out}/02-play.png`, fullPage: true })
 
   // Restarting during the delay must cancel the old result.
   await page.locator('[data-action="next"]').click()
+  ensure(await page.locator('[data-field="preview-cards"] img').count() === 0, 'enlarged cards persisted into the next turn')
   await page.waitForTimeout(300)
   await click3DCard(page, 'p1')
   await click3DCard(page, 's1')

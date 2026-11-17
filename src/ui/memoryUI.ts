@@ -1,6 +1,7 @@
 import '../styles/memory.css'
 import manifest from '../../assets.lock.json'
 import { REGIONS } from '../game/memoryRules'
+import { getTextureUrl } from '../game/textureUrls'
 
 export interface UIHandlers {
   onStart: (names: string[]) => void
@@ -14,6 +15,7 @@ export type MemoryState = {
   /** The zero-based index of the player whose turn it is. */
   turn: number
   phase: 'flip' | 'resolving' | 'turnEnd' | 'finished'
+  cards: { id: string; regionId: number; kind: 'place' | 'product'; revealed: boolean }[]
   selectedIds: string[]
   /** One entry for each collected pair. */
   claimed: number[]
@@ -54,6 +56,9 @@ export class MemoryUI {
   private playerCount = 2
   private playerMarkup = ''
   private wasFinished = false
+  // The rules clear selectedIds after a match, so retain only this turn's IDs.
+  private previewIds: string[] = []
+  private previewMarkup = ''
 
   constructor(root: HTMLElement, handlers: UIHandlers) {
     mountedRoots.get(root)?.abort()
@@ -99,10 +104,11 @@ export class MemoryUI {
 
           <aside class="memory-right" aria-label="차례 및 플레이어 상황">
             <section class="memory-turn-card" aria-labelledby="memory-turn-title"><div class="memory-turn-caption"><span class="memory-turn-dot"></span> 지금은 누구 차례?</div><div class="memory-turn-body"><div class="memory-turn-avatar" aria-hidden="true">✦</div><div><h2 id="memory-turn-title" data-field="turn-name">게임을 시작해요</h2><p data-field="turn-caption">차례마다 두 장씩 공개해요</p></div><span class="memory-turn-arrow">›</span></div></section>
+            <div class="memory-actions"><button type="button" class="memory-btn memory-btn-primary" data-action="next" disabled>다음 차례 ${arrowIcon}</button><button type="button" class="memory-btn memory-btn-quiet" data-action="restart"><span aria-hidden="true">↻</span> 새 게임</button></div>
+            <section class="memory-panel memory-preview-panel" aria-labelledby="memory-preview-title"><div class="memory-preview-heading"><div><span class="memory-kicker">OPEN CARDS</span><h2 id="memory-preview-title">공개된 카드 크게 보기</h2></div><span class="memory-preview-count" data-field="preview-count">0 / 2</span></div><p class="memory-preview-caption">3D 보드에서 공개한 카드만 보여요.</p><div class="memory-preview-cards" data-field="preview-cards" aria-live="polite"><p class="memory-preview-empty">아직 공개된 카드가 없어요.<br>보드에서 카드를 선택해 주세요.</p></div></section>
             <section class="memory-panel memory-players-panel" aria-labelledby="memory-players-title"><div class="memory-section-heading"><div><span class="memory-kicker">PLAYERS</span><h2 id="memory-players-title">함께하는 여행자</h2></div><span class="memory-players-icon">${peopleIcon}</span></div><p class="memory-player-intro" data-field="player-intro">여행자들이 찾은 짝을 살펴봐요.</p><div class="memory-player-list" data-field="players" role="list"><div class="memory-empty-players">게임을 시작하면 여행자가 보여요.</div></div></section>
             <section class="memory-status" aria-labelledby="memory-status-title"><div class="memory-status-icon">${sparkIcon}</div><div><h2 id="memory-status-title">지금은 이렇게!</h2><p data-field="instruction">카드 두 장을 공개하고 짝을 찾아보세요.</p></div></section>
             <p class="memory-message" data-field="message" aria-live="polite">함께 충북 여행을 시작해 볼까요?</p>
-            <div class="memory-actions"><button type="button" class="memory-btn memory-btn-primary" data-action="next" disabled>다음 차례 ${arrowIcon}</button><button type="button" class="memory-btn memory-btn-quiet" data-action="restart"><span aria-hidden="true">↻</span> 새 게임</button></div>
             <p class="memory-local-note"><span aria-hidden="true">●</span> 같은 기기에서 함께 플레이해요</p>
           </aside>
         </main>
@@ -139,6 +145,7 @@ export class MemoryUI {
     const current = state.players[state.turn]
     this.get('[data-field="turn-name"]').textContent = state.phase === 'finished' ? '여행 완료!' : current ? `${current.name}의 차례` : '게임을 시작해요'
     this.get('[data-field="turn-caption"]').textContent = state.phase === 'finished' ? '모든 짝을 찾았어요' : state.phase === 'resolving' ? '짝을 확인하고 있어요' : state.phase === 'turnEnd' ? '다음 차례를 기다려요' : '차례마다 두 장씩 공개해요'
+    this.renderPreview(state)
 
     const playersMarkup = state.players.length ? state.players.map((player, index) => {
       const active = index === state.turn && state.phase !== 'finished'
@@ -185,6 +192,38 @@ export class MemoryUI {
       this.showResult(winners)
     }
     this.wasFinished = finished
+  }
+
+  private renderPreview(state: MemoryState): void {
+    if (state.phase === 'flip' || state.phase === 'resolving') {
+      // Never derive the preview from all revealed cards: older claimed pairs stay face up.
+      this.previewIds = state.selectedIds.slice(0, 2)
+    } else {
+      const [first, second] = this.previewIds.map(id => state.cards.find(card => card.id === id))
+      const matched = this.previewIds.length === 2 && first && second && first.id !== second.id &&
+        first.revealed && second.revealed && first.regionId === second.regionId &&
+        first.kind !== second.kind && state.claimed.includes(first.regionId)
+      if (!matched) this.previewIds = []
+    }
+
+    const cards = this.previewIds.flatMap(id => {
+      const card = state.cards.find(candidate => candidate.id === id)
+      const region = card && regionsById.get(card.regionId)
+      // A card that is no longer actually face up must not leave its image or name in the DOM.
+      if (!card?.revealed || !region) return []
+      const isPlace = card.kind === 'place'
+      const kind = isPlace ? '관광지' : '특산물'
+      const name = isPlace ? region.place : region.product
+      const url = getTextureUrl(`assets/cards-hd/${isPlace ? 'p' : 's'}${region.id}.webp`)
+      const label = `${region.region} ${kind} ${name} 카드`
+      return [`<figure class="memory-preview-card"><img src="${escapeHtml(url)}" alt="${escapeHtml(label)}" width="684" height="1037" decoding="async"><figcaption><span>${escapeHtml(region.region)} · ${kind}</span><b>${escapeHtml(name)}</b></figcaption></figure>`]
+    })
+    const markup = cards.length ? cards.join('') : '<p class="memory-preview-empty">아직 공개된 카드가 없어요.<br>보드에서 카드를 선택해 주세요.</p>'
+    if (markup !== this.previewMarkup) {
+      this.get('[data-field="preview-cards"]').innerHTML = markup
+      this.previewMarkup = markup
+    }
+    this.get('[data-field="preview-count"]').textContent = `${cards.length} / 2`
   }
 
   private showResult(winners: string[]): void {
